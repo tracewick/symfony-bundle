@@ -139,4 +139,5 @@ jobs:
           dependency-versions: ${{ matrix.dependencies }}
 
       - name: Tests
-        run: composer test:unit
+        # Unit + functional Kernel/spool smoke (no ext-excimer required).
+        run: composer test

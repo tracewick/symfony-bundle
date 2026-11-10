@@ -48,7 +48,8 @@
         "rector/rector": "^2.2",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
-        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0"
+        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/routing": "^6.4 || ^7.0 || ^8.0"
     },
     "suggest": {
         "ext-excimer": "Required to collect profiles (install with PIE: https://php.github.io/pie/ — pie install wikimedia/excimer)"
@@ -106,6 +107,7 @@
         "stan": "phpstan analyse --memory-limit=1G",
         "test": "phpunit",
         "test:coverage": "phpunit --coverage-clover=build/coverage/clover.xml --coverage-xml=build/coverage/coverage-xml --log-junit=build/coverage/junit.xml",
+        "test:functional": "phpunit --testsuite functional",
         "test:unit": "phpunit --testsuite unit"
     }
 }
