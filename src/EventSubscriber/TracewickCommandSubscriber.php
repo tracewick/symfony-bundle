@@ -85,12 +85,9 @@ final readonly class TracewickCommandSubscriber implements EventSubscriberInterf
             return false;
         }
 
-        $command = $event->getCommand();
-        if (!$command instanceof Command) {
-            return false;
-        }
-
-        $name = $command->getName();
+        // ConsoleTerminateEvent always constructs with a Command; getCommand() is typed ?Command
+        // on the parent for historical reasons.
+        $name = $event->getCommand()?->getName();
 
         return \is_string($name) && \in_array($name, self::SKIP_WHEN_MESSENGER_PROFILING, true);
     }

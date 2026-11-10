@@ -32,6 +32,13 @@
                 "Tracewick\\Bridge\\Symfony\\Command\\StatsCommand::execute",
             ]
         },
+        "NullSafeMethodCall": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent: ConsoleTerminateEvent always constructs with a Command; getCommand()
+                // is only typed nullable on the parent. Final event class cannot be doubled.
+                "\\$name = \\$event->getCommand\\(\\)\\?->getName\\(\\);",
+            ]
+        },
 
         "IncrementInteger": {
             "ignore": [
