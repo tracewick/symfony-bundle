@@ -126,6 +126,46 @@ final class TracewickRequestSubscriberTest extends TestCase
         ], $calls);
     }
 
+    public function testLabelRouteFormatsObjectController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $controller = new class {
+            public function index(): void {}
+        };
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', [$controller, 'index']);
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', $controller::class . '::index'],
+        ], $calls);
+    }
+
+    public function testLabelRouteSkipsUnrecognizedController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', ['', 'index']);
+
+        $subscriber->labelRoute($event);
+    }
+
     public function testLabelRouteSkipsMissingRoute(): void
     {
         $this->profiler->expects(self::never())->method('label');
