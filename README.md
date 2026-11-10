@@ -3,11 +3,9 @@
 [![CI](https://github.com/tracewick/symfony-bundle/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/tracewick/symfony-bundle/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/tracewick/symfony-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/tracewick/symfony-bundle)
 
-> **Early development — not for production.**
->
-> Public scaffolding toward `0.1.0`. There is **no** tagged release yet; pin `dev-develop` only for
-> experiments. The HTTP subscriber and config tree work on `develop`, but the API may still change
-> before the first tag.
+> [!WARNING]
+> Tracewick Symfony Bundle **0.1.x is alpha**. The public API is not stable until 1.0.0 — expect
+> breaking changes in minor releases. Pin a version and read the changelog before upgrading.
 
 Official Symfony integration for
 [`tracewick/tracewick`](https://github.com/tracewick/tracewick) — a PHP sampling profiler on
@@ -28,8 +26,10 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 ## Install
 
 ```bash
-composer require tracewick/symfony-bundle:dev-develop
+composer require tracewick/symfony-bundle
 ```
+
+If Packagist does not list the package yet, pin `dev-develop` from GitHub until the first tag is published.
 
 Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
 
