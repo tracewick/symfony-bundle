@@ -29,8 +29,10 @@ make ci     # run every check CI runs on a pull request
 | `make deps`       | Detect unused and undeclared Composer dependencies     |
 | `make test`       | Run the unit test suite                                |
 | `make coverage`   | Run the tests with coverage reports in `build/coverage/` |
+| `make infection`  | Mutation testing (Infection PHAR + coverage; MSI ≥ 80%)  |
 
-Coverage needs [pcov](https://github.com/krakjoe/pcov) or Xdebug.
+Coverage and Infection need [pcov](https://github.com/krakjoe/pcov) or Xdebug. Install Infection as a PHAR
+(same version as CI: see `INFECTION_VERSION` in `.github/workflows/ci.yml`), not as a Composer dependency.
 
 ## Compatibility
 
