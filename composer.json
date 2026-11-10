@@ -28,8 +28,10 @@
     },
     "require": {
         "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
         "symfony/config": "^6.4 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
         "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
         "tracewick/tracewick": "^0.2"
     },
@@ -45,7 +47,8 @@
         "phpunit/phpunit": "^11.5",
         "rector/rector": "^2.2",
         "shipmonk/composer-dependency-analyser": "^1.8",
-        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0"
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0"
     },
     "suggest": {
         "ext-excimer": "Required to collect profiles (install with PIE: https://php.github.io/pie/ — pie install wikimedia/excimer)"

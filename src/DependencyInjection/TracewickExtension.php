@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tracewick\Bridge\Symfony\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Tracewick\Sink\ApplicationName;
 
 /**
@@ -55,5 +57,12 @@ final class TracewickExtension extends Extension
 
         $container->setParameter('tracewick.config', $config);
         $container->setParameter('tracewick.enabled', $config['enabled']);
+
+        if (!$config['enabled']) {
+            return;
+        }
+
+        $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
+        $loader->load('services.php');
     }
 }
