@@ -4,16 +4,56 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Tracewick\Sink\ApplicationName;
 
 /**
  * Loads `tracewick` bundle configuration into the container.
+ *
+ * Invalid configuration fails at container build so request handling never sees a half-wired profiler.
+ * Concrete application_name values are checked against Tracewick's ApplicationName rules; `%…%`
+ * placeholders are deferred until the container resolves them.
  */
 final class TracewickExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $this->processConfiguration(new Configuration(), $configs);
+        /** @var array{
+         *     enabled: bool,
+         *     application_name: ?string,
+         *     sample_rate: float,
+         *     spool_directory: ?string,
+         *     sink: string,
+         *     base_labels: array<string, string>,
+         *     pyroscope: array{
+         *         server_url: ?string,
+         *         basic_auth_user: ?string,
+         *         basic_auth_password: ?string,
+         *         tenant: ?string
+         *     }
+         * } $config
+         */
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
+        if (
+            $config['enabled']
+            && \is_string($config['application_name'])
+            && !str_contains($config['application_name'], '%')
+        ) {
+            try {
+                ApplicationName::assertValid($config['application_name']);
+            } catch (\Throwable $e) {
+                throw new InvalidConfigurationException(
+                    \sprintf('Invalid tracewick.application_name: %s', $e->getMessage()),
+                    0,
+                    $e,
+                );
+            }
+        }
+
+        $container->setParameter('tracewick.config', $config);
+        $container->setParameter('tracewick.enabled', $config['enabled']);
     }
 }

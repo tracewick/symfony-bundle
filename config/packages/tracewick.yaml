@@ -1,0 +1,30 @@
+# Example Tracewick Symfony Bundle configuration.
+# Copy to your app's config/packages/tracewick.yaml (Flex recipe will do this later).
+#
+# Defaults: SpoolSink, sample_rate 0.1. Do not use sink: pyroscope from PHP-FPM in production —
+# run tracewick-drain or the Go agent beside the app instead.
+#
+# Kill switch (core): TRACEWICK_DISABLE_FILE / TRACEWICK_ENABLED — see
+# https://github.com/tracewick/tracewick/blob/main/docs/runtime.md
+
+parameters:
+    env(TRACEWICK_SPOOL_DIR): /var/spool/tracewick
+    env(TRACEWICK_APPLICATION): app
+    env(TRACEWICK_SINK): spool
+    env(PYROSCOPE_URL): http://127.0.0.1:4040
+
+tracewick:
+    enabled: true
+    application_name: '%env(TRACEWICK_APPLICATION)%'
+    sample_rate: 0.1
+    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
+    sink: '%env(TRACEWICK_SINK)%'
+    base_labels:
+        env: '%kernel.environment%'
+        # runtime: fpm   # or rr / frankenphp — set statically per deploy
+    # Only when sink is pyroscope (experiments / CLI — not the FPM default):
+    # pyroscope:
+    #     server_url: '%env(PYROSCOPE_URL)%'
+    #     basic_auth_user: '%env(default::PYROSCOPE_USER)%'
+    #     basic_auth_password: '%env(default::PYROSCOPE_PASSWORD)%'
+    #     tenant: '%env(default::PYROSCOPE_TENANT)%'
