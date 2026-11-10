@@ -9,6 +9,7 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
 use Tracewick\Sink\ApplicationName;
 
 /**
@@ -29,6 +30,7 @@ final class TracewickExtension extends Extension
          *     spool_directory: ?string,
          *     sink: string,
          *     label_controller: bool,
+         *     profile_console: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -59,6 +61,7 @@ final class TracewickExtension extends Extension
         $container->setParameter('tracewick.config', $config);
         $container->setParameter('tracewick.enabled', $config['enabled']);
         $container->setParameter('tracewick.label_controller', $config['label_controller']);
+        $container->setParameter('tracewick.profile_console', $config['profile_console']);
 
         if (!$config['enabled']) {
             return;
@@ -66,5 +69,9 @@ final class TracewickExtension extends Extension
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.php');
+
+        if (!$config['profile_console']) {
+            $container->removeDefinition(TracewickCommandSubscriber::class);
+        }
     }
 }

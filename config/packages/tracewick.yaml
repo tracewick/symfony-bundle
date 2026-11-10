@@ -21,6 +21,8 @@ tracewick:
     sink: '%env(TRACEWICK_SINK)%'
     # Optional: also label the resolved controller (default false; route name is always set).
     # label_controller: true
+    # Console commands are profiled by default (command name label). Set false to disable CLI only.
+    # profile_console: false
     base_labels:
         env: '%kernel.environment%'
         # runtime: fpm   # or rr / frankenphp — set statically per deploy
