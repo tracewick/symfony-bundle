@@ -95,6 +95,11 @@
         "cs:check": "php-cs-fixer check --diff",
         "cs:fix": "php-cs-fixer fix",
         "deps": "composer-dependency-analyser",
+        "infection": [
+            "@test:coverage",
+            "@infection:ci"
+        ],
+        "infection:ci": "infection --coverage=build/coverage --skip-initial-tests --threads=max --show-mutations",
         "normalize:check": "@composer normalize --dry-run --diff",
         "rector:check": "rector process --dry-run",
         "rector:fix": "rector process",

@@ -19,6 +19,7 @@ behaviour over inventing new semantics.
 ```bash
 composer install
 make ci          # lint, static analysis, unit tests, composer audit
+make infection   # mutation testing (Infection PHAR; MSI ≥ 80%)
 make cs-fix      # fix coding style and normalize composer.json
 make stan        # PHPStan, level max
 make test-unit   # unit tests (no ext-excimer required)

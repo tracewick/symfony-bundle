@@ -67,7 +67,10 @@ final class ProfilerFactoryTest extends TestCase
             ->method('warning')
             ->with(
                 'Tracewick profiler could not be created; profiling is disabled for this worker.',
-                self::callback(static fn(array $context): bool => isset($context['exception']) && $context['exception'] instanceof \Throwable),
+                self::callback(static fn(array $context): bool => self::isFactoryGuardException(
+                    $context,
+                    'tracewick.application_name resolved to an empty value.',
+                )),
             );
 
         $factory = new ProfilerFactory();
@@ -81,10 +84,21 @@ final class ProfilerFactoryTest extends TestCase
 
     public function testCreateReturnsNullProfilerWhenSpoolDirectoryEmpty(): void
     {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                'Tracewick profiler could not be created; profiling is disabled for this worker.',
+                self::callback(static fn(array $context): bool => self::isFactoryGuardException(
+                    $context,
+                    'tracewick.spool_directory resolved to an empty value.',
+                )),
+            );
+
         $factory = new ProfilerFactory();
         $profiler = $factory($this->config([
             'spool_directory' => '',
-        ]), sys_get_temp_dir(), new NullLogger());
+        ]), sys_get_temp_dir(), $logger);
 
         self::assertInstanceOf(NullHttpProfiler::class, $profiler);
         $this->assertNullProfilerIsUsable($profiler);
@@ -92,6 +106,17 @@ final class ProfilerFactoryTest extends TestCase
 
     public function testCreateReturnsNullProfilerWhenPyroscopeServerUrlEmpty(): void
     {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                'Tracewick profiler could not be created; profiling is disabled for this worker.',
+                self::callback(static fn(array $context): bool => self::isFactoryGuardException(
+                    $context,
+                    'tracewick.pyroscope.server_url resolved to an empty value.',
+                )),
+            );
+
         $factory = new ProfilerFactory();
         $profiler = $factory($this->config([
             'sink' => 'pyroscope',
@@ -102,7 +127,7 @@ final class ProfilerFactoryTest extends TestCase
                 'basic_auth_password' => null,
                 'tenant' => null,
             ],
-        ]), sys_get_temp_dir(), new NullLogger());
+        ]), sys_get_temp_dir(), $logger);
 
         self::assertInstanceOf(NullHttpProfiler::class, $profiler);
         $this->assertNullProfilerIsUsable($profiler);
@@ -184,5 +209,15 @@ final class ProfilerFactoryTest extends TestCase
         $profiler->label('route', 'app_home');
         $profiler->stop();
         $profiler->flush();
+    }
+
+    /**
+     * @param array<mixed> $context
+     */
+    private static function isFactoryGuardException(array $context, string $message): bool
+    {
+        $exception = $context['exception'] ?? null;
+
+        return $exception instanceof \InvalidArgumentException && $message === $exception->getMessage();
     }
 }

@@ -141,6 +141,18 @@ final class ConfigurationTest extends TestCase
         self::assertSame('%env(TRACEWICK_SINK)%', $config['sink']);
     }
 
+    public function testDisabledSkipsPyroscopeServerUrlRequirement(): void
+    {
+        $config = $this->process([[
+            'enabled' => false,
+            'sink' => 'pyroscope',
+        ]]);
+
+        self::assertFalse($config['enabled']);
+        self::assertSame('pyroscope', $config['sink']);
+        self::assertNull($config['pyroscope']['server_url']);
+    }
+
     /**
      * @param list<array<string, mixed>> $configs
      *

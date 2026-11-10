@@ -59,6 +59,22 @@ final class TracewickExtensionTest extends TestCase
         self::assertFalse($container->hasDefinition(TracewickRequestSubscriber::class));
     }
 
+    public function testLoadSkipsApplicationNameAssertWhenDisabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new TracewickExtension();
+
+        $extension->load([[
+            'enabled' => false,
+            'application_name' => 'bad name!',
+        ]], $container);
+
+        self::assertFalse($container->getParameter('tracewick.enabled'));
+        /** @var array{application_name: ?string} $config */
+        $config = $container->getParameter('tracewick.config');
+        self::assertSame('bad name!', $config['application_name']);
+    }
+
     public function testLoadAcceptsEnvPlaceholdersForApplicationName(): void
     {
         $container = new ContainerBuilder();
