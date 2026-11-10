@@ -196,7 +196,7 @@ final class ProfilerFactoryTest extends TestCase
             'spool_directory' => sys_get_temp_dir() . '/tracewick-bundle-test-spool',
             'sink' => 'spool',
             'label_controller' => false,
-            'profile_console' => true,
+            'profile_console' => false,
             'base_labels' => ['env' => 'test'],
             'pyroscope' => [
                 'server_url' => null,

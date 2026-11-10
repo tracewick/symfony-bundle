@@ -47,17 +47,11 @@
                 "'enabled' => \\\\is_bool\\(\\$v\\['enabled'\\] \\?\\? null\\) \\? \\$v\\['enabled'\\] : false,",
                 // See enabled (label_controller fallback in shape()).
                 "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
-                // See enabled (profile_console fallback in shape(); default true under Processor).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
+                // See enabled (profile_console fallback in shape(); default false under Processor).
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
                 // Equivalent in PHPUnit Processor tests: PHP already casts numeric string keys to int
                 // before the tree sees them; normalizeKeys matters for YAML/XML loaders, not these tests.
                 "->normalizeKeys\\(false\\)",
-            ]
-        },
-        "TrueValue": {
-            "ignoreSourceCodeByRegex": [
-                // See FalseValue (profile_console fallback in shape(); default true under Processor).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
             ]
         },
         "IfNegation": {
@@ -128,7 +122,7 @@
                 // See FalseValue (label_controller fallback in shape()).
                 "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
                 // See FalseValue (profile_console fallback in shape()).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
             ]
         },
         "CastFloat": {

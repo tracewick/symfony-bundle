@@ -81,10 +81,12 @@ On each **main** HTTP request the bundle:
    (never the raw URI). Optionally also sets `controller` when `label_controller: true`.
 3. On `kernel.terminate` (priority `-4096`), stops and flushes to the configured sink.
 
-On each **console command** (when `profile_console` is true, the default):
+On each **console command** (opt-in: `profile_console: true`):
 
 1. Starts on `console.command` (priority `4096`) with `command=<name>` (never argv).
 2. On `console.terminate` (priority `-4096`), stops and flushes.
+
+HTTP is profiled by default; console (and later Messenger) stay off until enabled.
 
 One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the
 listener and factory boundary (fail-open): bad config or a missing extension disables profiling
