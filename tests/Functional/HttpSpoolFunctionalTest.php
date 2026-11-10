@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony\Tests\Functional;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -14,21 +14,16 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Tracewick\Bridge\Symfony\DependencyInjection\Configuration;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickRequestSubscriber;
 use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
-use Tracewick\Bridge\Symfony\Profiler\ProfilerFactory;
 use Tracewick\Bridge\Symfony\Profiler\UnitOfWorkHttpProfiler;
 use Tracewick\Bridge\Symfony\Tests\Functional\App\FunctionalKernel;
 use Tracewick\Bridge\Symfony\Tests\Support\RecordingHttpProfiler;
-use Tracewick\Bridge\Symfony\TracewickBundle;
 
 /**
  * Boots a minimal FrameworkBundle kernel and exercises Tracewick HTTP + spool wiring.
  *
  * @phpstan-import-type TracewickConfig from Configuration
  */
-#[CoversClass(TracewickBundle::class)]
-#[CoversClass(TracewickRequestSubscriber::class)]
-#[CoversClass(ProfilerFactory::class)]
-#[CoversClass(UnitOfWorkHttpProfiler::class)]
+#[CoversNothing]
 final class HttpSpoolFunctionalTest extends TestCase
 {
     private string $workdir;
@@ -52,6 +47,20 @@ final class HttpSpoolFunctionalTest extends TestCase
         if ($this->kernel instanceof FunctionalKernel) {
             $this->kernel->shutdown();
             $this->kernel = null;
+        }
+
+        // Pop only Symfony's ErrorHandler when it is still on the stack (PHPUnit flags leftovers
+        // as risky on Symfony 6.4 lowest). Do not wipe PHPUnit's own handlers.
+        $exceptionHandler = set_exception_handler(static fn(\Throwable $e): null => null);
+        restore_exception_handler();
+        if (\is_object($exceptionHandler) && str_starts_with($exceptionHandler::class, 'Symfony\\Component\\ErrorHandler\\')) {
+            restore_exception_handler();
+        }
+
+        $errorHandler = set_error_handler(static fn(): bool => false);
+        restore_error_handler();
+        if (\is_object($errorHandler) && str_starts_with($errorHandler::class, 'Symfony\\Component\\ErrorHandler\\')) {
+            restore_error_handler();
         }
 
         if (null !== $this->previousErrorLog) {
