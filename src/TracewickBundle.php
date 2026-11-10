@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony;
 
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Tracewick\Bridge\Symfony\DependencyInjection\Compiler\AddTracewickMessengerMiddlewarePass;
@@ -19,6 +20,12 @@ final class TracewickBundle extends Bundle
     {
         parent::build($container);
 
-        $container->addCompilerPass(new AddTracewickMessengerMiddlewarePass());
+        // Priority 10: run before FrameworkBundle's MessengerPass (priority 0), which consumes
+        // and removes `{busId}.middleware` parameters.
+        $container->addCompilerPass(
+            new AddTracewickMessengerMiddlewarePass(),
+            PassConfig::TYPE_BEFORE_OPTIMIZATION,
+            10,
+        );
     }
 }

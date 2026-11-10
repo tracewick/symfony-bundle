@@ -16,11 +16,20 @@ use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
  *
  * Starts on ConsoleEvents::COMMAND, labels with the command name (never argv), and delivers on
  * TERMINATE. Fail-open: errors are swallowed at the listener boundary.
+ *
+ * When Messenger profiling is also enabled, long-lived `messenger:consume` is skipped so the
+ * command unit of work does not collide with per-message middleware profiles.
  */
 final readonly class TracewickCommandSubscriber implements EventSubscriberInterface
 {
+    private const SKIP_WHEN_MESSENGER_PROFILING = [
+        'messenger:consume',
+        'messenger:consume-messages',
+    ];
+
     public function __construct(
         private HttpProfiler $profiler,
+        private bool $profileMessenger = false,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -35,6 +44,10 @@ final readonly class TracewickCommandSubscriber implements EventSubscriberInterf
     public function startProfile(ConsoleCommandEvent $event): void
     {
         try {
+            if ($this->shouldSkip($event)) {
+                return;
+            }
+
             $this->profiler->start([
                 'command' => $this->commandName($event),
             ]);
@@ -46,11 +59,40 @@ final readonly class TracewickCommandSubscriber implements EventSubscriberInterf
     public function deliverProfile(ConsoleTerminateEvent $event): void
     {
         try {
+            if ($this->shouldSkipTerminate($event)) {
+                return;
+            }
+
             $this->profiler->stop();
             $this->profiler->flush();
         } catch (\Throwable) {
             // Fail-open.
         }
+    }
+
+    private function shouldSkip(ConsoleCommandEvent $event): bool
+    {
+        if (!$this->profileMessenger) {
+            return false;
+        }
+
+        return \in_array($this->commandName($event), self::SKIP_WHEN_MESSENGER_PROFILING, true);
+    }
+
+    private function shouldSkipTerminate(ConsoleTerminateEvent $event): bool
+    {
+        if (!$this->profileMessenger) {
+            return false;
+        }
+
+        $command = $event->getCommand();
+        if (!$command instanceof Command) {
+            return false;
+        }
+
+        $name = $command->getName();
+
+        return \is_string($name) && \in_array($name, self::SKIP_WHEN_MESSENGER_PROFILING, true);
     }
 
     private function commandName(ConsoleCommandEvent $event): string

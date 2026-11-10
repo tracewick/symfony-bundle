@@ -45,9 +45,13 @@ final class ProfilerFactory
 
             return new UnitOfWorkHttpProfiler($profiler);
         } catch (\Throwable $e) {
-            $logger->warning('Tracewick profiler could not be created; profiling is disabled for this worker.', [
-                'exception' => $e,
-            ]);
+            try {
+                $logger->warning('Tracewick profiler could not be created; profiling is disabled for this worker.', [
+                    'exception' => $e,
+                ]);
+            } catch (\Throwable) {
+                // Fail-open: a broken logger must not prevent returning the no-op profiler.
+            }
 
             return new NullHttpProfiler();
         }
@@ -63,24 +67,43 @@ final class ProfilerFactory
             throw new \InvalidArgumentException('tracewick.application_name resolved to an empty value.');
         }
 
-        if ('pyroscope' === $config['sink']) {
-            $serverUrl = $config['pyroscope']['server_url'] ?? '';
-            if ('' === $serverUrl) {
-                throw new \InvalidArgumentException('tracewick.pyroscope.server_url resolved to an empty value.');
-            }
+        return match ($config['sink']) {
+            'pyroscope' => $this->createPyroscopeSink($config, $applicationName, $logger),
+            'spool' => $this->createSpoolSink($config, $applicationName),
+            default => throw new \InvalidArgumentException(\sprintf(
+                'Unsupported tracewick.sink "%s"; expected "spool" or "pyroscope".',
+                $config['sink'],
+            )),
+        };
+    }
 
-            return new PyroscopeSink(
-                new PyroscopeConfig(
-                    $serverUrl,
-                    $applicationName,
-                    $config['pyroscope']['basic_auth_user'],
-                    $config['pyroscope']['basic_auth_password'],
-                    $config['pyroscope']['tenant'],
-                ),
-                logger: $logger,
-            );
+    /**
+     * @param TracewickConfig $config
+     */
+    private function createPyroscopeSink(array $config, string $applicationName, LoggerInterface $logger): PyroscopeSink
+    {
+        $serverUrl = $config['pyroscope']['server_url'] ?? '';
+        if ('' === $serverUrl) {
+            throw new \InvalidArgumentException('tracewick.pyroscope.server_url resolved to an empty value.');
         }
 
+        return new PyroscopeSink(
+            new PyroscopeConfig(
+                $serverUrl,
+                $applicationName,
+                $config['pyroscope']['basic_auth_user'],
+                $config['pyroscope']['basic_auth_password'],
+                $config['pyroscope']['tenant'],
+            ),
+            logger: $logger,
+        );
+    }
+
+    /**
+     * @param TracewickConfig $config
+     */
+    private function createSpoolSink(array $config, string $applicationName): SpoolSink
+    {
         $spoolDirectory = $config['spool_directory'] ?? '';
         if ('' === $spoolDirectory) {
             throw new \InvalidArgumentException('tracewick.spool_directory resolved to an empty value.');

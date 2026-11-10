@@ -36,6 +36,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(TracewickCommandSubscriber::class)
         ->args([
             service('tracewick.profiler'),
+            param('tracewick.profile_messenger'),
         ])
         ->tag('kernel.event_subscriber');
 
