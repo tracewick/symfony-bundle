@@ -1,5 +1,6 @@
-# Example Tracewick Symfony Bundle configuration.
-# Copy to your app's config/packages/tracewick.yaml (Flex recipe will do this later).
+# Example Tracewick Symfony Bundle configuration (documented full surface).
+# Flex recipe installs a minimal subset — see symfony/recipes-contrib
+# tracewick/symfony-bundle/0.1 — then copy this file only when you need the extras.
 #
 # Defaults: SpoolSink, sample_rate 0.1. Do not use sink: pyroscope from PHP-FPM in production —
 # run tracewick-drain or the Go agent beside the app instead.
