@@ -6,6 +6,12 @@ updates:
     schedule:
       interval: monthly
     versioning-strategy: increase-if-necessary
+    # PHPUnit 13+ needs PHP ≥ 8.4.1; package still supports 8.2/8.3 (#8).
+    # Group PRs ignore @dependabot ignore comments — pin majors here instead.
+    ignore:
+      - dependency-name: phpunit/phpunit
+        update-types:
+          - version-update:semver-major
     groups:
       dev-tools:
         dependency-type: development
