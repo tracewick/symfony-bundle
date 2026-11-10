@@ -10,6 +10,8 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Tracewick\Bridge\Symfony\DependencyInjection\Configuration;
 use Tracewick\Bridge\Symfony\DependencyInjection\TracewickExtension;
+use Tracewick\Bridge\Symfony\EventSubscriber\TracewickRequestSubscriber;
+use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
 
 /**
  * @phpstan-import-type TracewickConfig from Configuration
@@ -37,6 +39,12 @@ final class TracewickExtensionTest extends TestCase
         self::assertSame(0.25, $config['sample_rate']);
         self::assertSame('/var/spool/tracewick', $config['spool_directory']);
         self::assertSame(['env' => 'test'], $config['base_labels']);
+        self::assertTrue($container->hasDefinition('tracewick.profiler'));
+        self::assertTrue($container->hasAlias(HttpProfiler::class));
+        self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
+        self::assertTrue(
+            $container->getDefinition(TracewickRequestSubscriber::class)->hasTag('kernel.event_subscriber'),
+        );
     }
 
     public function testLoadAcceptsDisabledWithoutRequiredFields(): void
@@ -47,6 +55,8 @@ final class TracewickExtensionTest extends TestCase
         $extension->load([['enabled' => false]], $container);
 
         self::assertFalse($container->getParameter('tracewick.enabled'));
+        self::assertFalse($container->hasDefinition('tracewick.profiler'));
+        self::assertFalse($container->hasDefinition(TracewickRequestSubscriber::class));
     }
 
     public function testLoadAcceptsEnvPlaceholdersForApplicationName(): void
