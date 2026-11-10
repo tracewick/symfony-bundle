@@ -35,6 +35,8 @@ final class HttpSpoolFunctionalTest extends TestCase
 
     private ?string $previousErrorLog = null;
 
+    private ?FunctionalKernel $kernel = null;
+
     protected function setUp(): void
     {
         $this->workdir = sys_get_temp_dir() . '/tracewick-sb-func-' . bin2hex(random_bytes(8));
@@ -47,6 +49,11 @@ final class HttpSpoolFunctionalTest extends TestCase
 
     protected function tearDown(): void
     {
+        if ($this->kernel instanceof FunctionalKernel) {
+            $this->kernel->shutdown();
+            $this->kernel = null;
+        }
+
         if (null !== $this->previousErrorLog) {
             ini_set('error_log', $this->previousErrorLog);
         }
@@ -84,8 +91,6 @@ final class HttpSpoolFunctionalTest extends TestCase
         self::assertSame('spool', $config['sink']);
         self::assertSame($this->workdir . '/spool', $config['spool_directory']);
         self::assertSame(1.0, $config['sample_rate']);
-
-        $kernel->shutdown();
     }
 
     public function testDisabledSkipsProfilerServicesAndLeavesSpoolEmpty(): void
@@ -112,8 +117,6 @@ final class HttpSpoolFunctionalTest extends TestCase
         $kernel->terminate($request, $response);
 
         self::assertSame([], $this->spoolEntries());
-
-        $kernel->shutdown();
     }
 
     public function testEnabledRealProfilerBootsWithSpoolSinkWithoutExcimer(): void
@@ -133,8 +136,6 @@ final class HttpSpoolFunctionalTest extends TestCase
         if (!\extension_loaded('excimer')) {
             self::assertSame([], $this->spoolEntries());
         }
-
-        $kernel->shutdown();
     }
 
     #[RequiresPhpExtension('excimer')]
@@ -152,7 +153,6 @@ final class HttpSpoolFunctionalTest extends TestCase
         }
 
         $kernel->terminate($request, $response);
-        $kernel->shutdown();
 
         self::assertNotSame([], $this->spoolEntries(), 'Expected at least one spool file when ext-excimer is loaded.');
     }
@@ -165,16 +165,18 @@ final class HttpSpoolFunctionalTest extends TestCase
             $recordProfiler ? 'rec' : 'real',
         );
 
-        $kernel = new FunctionalKernel(
+        // debug=false avoids Symfony Debug ErrorHandler, which PHPUnit flags as leftover handlers
+        // on Symfony 6.4 lowest in the CI matrix.
+        $this->kernel = new FunctionalKernel(
             $environment,
-            true,
+            false,
             $this->workdir,
             $enabled,
             $recordProfiler,
         );
-        $kernel->boot();
+        $this->kernel->boot();
 
-        return $kernel;
+        return $this->kernel;
     }
 
     private function testContainer(FunctionalKernel $kernel): ContainerInterface
