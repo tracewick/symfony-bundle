@@ -1,13 +1,16 @@
 # Tracewick Symfony Bundle
 
+> **Early development — not for production.**
+>
+> This package is unfinished public scaffolding. There is **no** tagged release yet, the HTTP
+> subscriber / config tree are still in progress, and the API may change without notice. Do not
+> depend on it in real apps until `0.1.0`. Prefer the hand-rolled Demo wiring in
+> [`tracewick/tracewick`](https://github.com/tracewick/tracewick) until then.
+
 Official Symfony integration for
 [`tracewick/tracewick`](https://github.com/tracewick/tracewick) — a PHP sampling profiler on
 ext-excimer that writes profiles to a local spool (recommended) or optionally to Grafana
 Pyroscope.
-
-> **Status:** under construction. HTTP wiring (config + subscriber) is next; this repository is
-> not ready for production use yet. First public tag will be `0.1.0` after the MVP checklist
-> lands.
 
 ## Requirements
 
@@ -23,7 +26,7 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 ## Install (preview)
 
 ```bash
-composer require tracewick/symfony-bundle
+composer require tracewick/symfony-bundle:dev-develop
 ```
 
 Enable the bundle if Flex does not do it for you:
