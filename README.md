@@ -4,7 +4,7 @@
 [![Coverage](https://codecov.io/gh/tracewick/symfony-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/tracewick/symfony-bundle)
 
 > [!WARNING]
-> Tracewick Symfony Bundle **0.1.x is alpha**. The public API is not stable until 1.0.0 — expect
+> Tracewick Symfony Bundle **0.x is alpha**. The public API is not stable until 1.0.0 — expect
 > breaking changes in minor releases. Pin a version and read the changelog before upgrading.
 
 Official Symfony integration for
