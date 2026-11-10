@@ -96,6 +96,10 @@ final class TracewickExtensionTest extends TestCase
         self::assertTrue(
             $container->getDefinition(TracewickCommandSubscriber::class)->hasTag('kernel.event_subscriber'),
         );
+        self::assertSame(
+            '%tracewick.profile_messenger%',
+            $container->getDefinition(TracewickCommandSubscriber::class)->getArgument(1),
+        );
         self::assertFalse($container->hasDefinition(TracewickMessengerMiddleware::class));
     }
 

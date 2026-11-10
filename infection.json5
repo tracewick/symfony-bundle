@@ -32,6 +32,13 @@
                 "Tracewick\\Bridge\\Symfony\\Command\\StatsCommand::execute",
             ]
         },
+        "NullSafeMethodCall": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent: ConsoleTerminateEvent always constructs with a Command; getCommand()
+                // is only typed nullable on the parent. Final event class cannot be doubled.
+                "\\$name = \\$event->getCommand\\(\\)\\?->getName\\(\\);",
+            ]
+        },
 
         "IncrementInteger": {
             "ignore": [
@@ -103,15 +110,12 @@
             ]
         },
         "LogicalOr": {
-            "ignore": [
-                // Equivalent: Container ParameterBag keys are always strings; Framework bus lists are arrays.
-                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\Compiler\\AddTracewickMessengerMiddlewarePass::process",
-            ],
             "ignoreSourceCodeByRegex": [
                 // Equivalent under Processor: sample_rate is always float|int from floatNode before shape().
                 "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
             ]
         },
+
         "LogicalOrAllSubExprNegation": {
             "ignoreSourceCodeByRegex": [
                 // See LogicalOr (sample_rate typing in shape()).

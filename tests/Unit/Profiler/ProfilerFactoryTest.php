@@ -150,6 +150,44 @@ final class ProfilerFactoryTest extends TestCase
         self::assertInstanceOf(NullHttpProfiler::class, $profiler);
     }
 
+    public function testCreateReturnsNullProfilerWhenSinkUnknown(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                'Tracewick profiler could not be created; profiling is disabled for this worker.',
+                self::callback(static fn(array $context): bool => self::isFactoryGuardException(
+                    $context,
+                    'Unsupported tracewick.sink "pyroscop"; expected "spool" or "pyroscope".',
+                )),
+            );
+
+        $factory = new ProfilerFactory();
+        $profiler = $factory($this->config([
+            'sink' => 'pyroscop',
+        ]), sys_get_temp_dir(), $logger);
+
+        self::assertInstanceOf(NullHttpProfiler::class, $profiler);
+        $this->assertNullProfilerIsUsable($profiler);
+    }
+
+    public function testCreateReturnsNullProfilerWhenLoggerThrowsDuringWarning(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->willThrowException(new \RuntimeException('logger boom'));
+
+        $factory = new ProfilerFactory();
+        $profiler = $factory($this->config([
+            'application_name' => '',
+        ]), sys_get_temp_dir(), $logger);
+
+        self::assertInstanceOf(NullHttpProfiler::class, $profiler);
+        $this->assertNullProfilerIsUsable($profiler);
+    }
+
     /**
      * @param array<string, mixed> $overrides
      *

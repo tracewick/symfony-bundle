@@ -11,8 +11,10 @@ use Tracewick\Bridge\Symfony\Middleware\TracewickMessengerMiddleware;
 /**
  * Prepends {@see TracewickMessengerMiddleware} onto every Messenger bus middleware list.
  *
- * FrameworkBundle stores each bus stack as the `{busId}.middleware` parameter. Listing the
- * service only under a tag is not enough — buses must reference it explicitly.
+ * Must run before Symfony's {@see \Symfony\Component\Messenger\DependencyInjection\MessengerPass}
+ * (priority above 0): that pass reads `{busId}.middleware` and then removes the parameter.
+ *
+ * Existing middleware entries are left intact (including `arguments`); only our id is prepended.
  */
 final class AddTracewickMessengerMiddlewarePass implements CompilerPassInterface
 {
@@ -22,50 +24,33 @@ final class AddTracewickMessengerMiddlewarePass implements CompilerPassInterface
             return;
         }
 
-        foreach ($container->getParameterBag()->all() as $name => $middleware) {
-            if (!\is_string($name) || !str_ends_with($name, '.middleware') || !\is_array($middleware)) {
+        foreach (array_keys($container->findTaggedServiceIds('messenger.bus')) as $busId) {
+            $parameter = $busId . '.middleware';
+            if (!$container->hasParameter($parameter)) {
                 continue;
             }
 
-            $normalized = $this->normalizeBusMiddlewareList($middleware);
-            if (null === $normalized) {
+            $middleware = $container->getParameter($parameter);
+            if (!\is_array($middleware)) {
                 continue;
             }
 
-            if ($this->alreadyRegistered($normalized)) {
+            if ($this->alreadyRegistered($middleware)) {
                 continue;
             }
 
-            array_unshift($normalized, ['id' => TracewickMessengerMiddleware::class]);
-            $container->setParameter($name, $normalized);
+            array_unshift($middleware, ['id' => TracewickMessengerMiddleware::class]);
+            $container->setParameter($parameter, $middleware);
         }
     }
 
     /**
      * @param array<mixed> $middleware
-     *
-     * @return list<array{id: string}>|null
-     */
-    private function normalizeBusMiddlewareList(array $middleware): ?array
-    {
-        $normalized = [];
-        foreach ($middleware as $item) {
-            if (!\is_array($item) || !isset($item['id']) || !\is_string($item['id'])) {
-                return null;
-            }
-            $normalized[] = ['id' => $item['id']];
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @param list<array{id: string}> $middleware
      */
     private function alreadyRegistered(array $middleware): bool
     {
         foreach ($middleware as $item) {
-            if ($item['id'] === TracewickMessengerMiddleware::class) {
+            if (\is_array($item) && ($item['id'] ?? null) === TracewickMessengerMiddleware::class) {
                 return true;
             }
         }

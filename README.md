@@ -93,20 +93,29 @@ On each **consumed Messenger message** (opt-in: `profile_messenger: true`, needs
 2. Stops and flushes in `finally` after the rest of the bus stack.
 
 HTTP is profiled by default; console and Messenger stay off until enabled. For
-`messenger:consume`, prefer `profile_messenger: true` and leave `profile_console` false so the
-long-lived consumer command does not share one unit of work with every message.
+`messenger:consume`, prefer `profile_messenger: true`. If both flags are on, the console
+subscriber skips `messenger:consume` / `messenger:consume-messages` so the long-lived consumer
+command does not share one unit of work with every message.
 
-One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the
-listener and factory boundary (fail-open): bad config or a missing extension disables profiling
-for that worker instead of breaking the request.
+One shared `UnitOfWorkProfiler` is built per worker process.
 
-Inspect process counters (collected / dropped / delivered / inactive sampler, …):
+**Fail-open (runtime):** listener/middleware boundaries swallow errors; factory construction
+failures (including a broken logger or an unknown `sink` after env resolve) return a no-op
+profiler so the worker keeps serving. **Not fail-open:** invalid YAML / config-tree values still
+fail at container build / `cache:warmup` — that is intentional so a half-wired profiler never
+reaches request handling. Missing `%env(...)%` values also fail when Symfony resolves service
+arguments, before the factory `try/catch`.
+
+Inspect **this process** counters (collected / dropped / delivered / inactive sampler, …):
 
 ```bash
 bin/console tracewick:stats
 ```
 
-Same snapshot is available as `HttpProfiler::diagnostics()` for app code.
+That command starts a new CLI process, so it shows zeros unless something profiled **in that
+same process**. FPM / RoadRunner / `messenger:consume` counters live in those workers —
+use `HttpProfiler::diagnostics()` from app code there, or scrape host metrics from core when
+configured. Same snapshot API is available as `HttpProfiler::diagnostics()`.
 
 ## Production path
 

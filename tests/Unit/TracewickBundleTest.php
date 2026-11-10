@@ -13,20 +13,25 @@ use Tracewick\Bridge\Symfony\TracewickBundle;
 #[CoversClass(TracewickBundle::class)]
 final class TracewickBundleTest extends TestCase
 {
-    public function testBuildRegistersMessengerMiddlewarePass(): void
+    public function testBuildRegistersMessengerMiddlewarePassBeforeMessengerPass(): void
     {
         $container = new ContainerBuilder();
         (new TracewickBundle())->build($container);
 
-        $passes = $container->getCompilerPassConfig()->getBeforeOptimizationPasses();
-        $found = false;
-        foreach ($passes as $pass) {
-            if ($pass instanceof AddTracewickMessengerMiddlewarePass) {
-                $found = true;
-                break;
+        $passConfig = $container->getCompilerPassConfig();
+        $reflection = new \ReflectionProperty($passConfig, 'beforeOptimizationPasses');
+        /** @var array<int, list<object>> $byPriority */
+        $byPriority = $reflection->getValue($passConfig);
+
+        $priority = null;
+        foreach ($byPriority as $passPriority => $group) {
+            foreach ($group as $pass) {
+                if ($pass instanceof AddTracewickMessengerMiddlewarePass) {
+                    $priority = $passPriority;
+                }
             }
         }
 
-        self::assertTrue($found);
+        self::assertSame(10, $priority);
     }
 }
