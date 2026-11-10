@@ -100,6 +100,14 @@ One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallo
 listener and factory boundary (fail-open): bad config or a missing extension disables profiling
 for that worker instead of breaking the request.
 
+Inspect process counters (collected / dropped / delivered / inactive sampler, …):
+
+```bash
+bin/console tracewick:stats
+```
+
+Same snapshot is available as `HttpProfiler::diagnostics()` for app code.
+
 ## Production path
 
 - Prefer **`SpoolSink`** (`sink: spool`) from the request worker.

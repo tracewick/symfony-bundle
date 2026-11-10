@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony\Profiler;
 
+use Tracewick\Runtime\Diagnostics;
+
 /**
  * No-op profiler used when wiring is disabled or construction fails (fail-open).
  */
@@ -16,4 +18,9 @@ final class NullHttpProfiler implements HttpProfiler
     public function stop(): void {}
 
     public function flush(): void {}
+
+    public function diagnostics(): Diagnostics
+    {
+        return new Diagnostics();
+    }
 }

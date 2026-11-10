@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tracewick\Bridge\Symfony\Tests\Support;
 
 use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
+use Tracewick\Runtime\Diagnostics;
 
 /**
  * Records HTTP profiler calls for functional Kernel lifecycle assertions.
@@ -32,5 +33,10 @@ final class RecordingHttpProfiler implements HttpProfiler
     public function flush(): void
     {
         $this->calls[] = ['flush'];
+    }
+
+    public function diagnostics(): Diagnostics
+    {
+        return new Diagnostics();
     }
 }

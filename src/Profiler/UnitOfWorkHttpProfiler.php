@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony\Profiler;
 
+use Tracewick\Runtime\Diagnostics;
 use Tracewick\Runtime\UnitOfWorkProfiler;
 
 /**
@@ -33,5 +34,10 @@ final readonly class UnitOfWorkHttpProfiler implements HttpProfiler
     public function flush(): void
     {
         $this->profiler->flush();
+    }
+
+    public function diagnostics(): Diagnostics
+    {
+        return $this->profiler->diagnostics();
     }
 }

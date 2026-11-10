@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use Tracewick\Bridge\Symfony\Command\StatsCommand;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickRequestSubscriber;
 use Tracewick\Bridge\Symfony\Middleware\TracewickMessengerMiddleware;
@@ -42,4 +43,10 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('tracewick.profiler'),
         ]);
+
+    $services->set(StatsCommand::class)
+        ->args([
+            service('tracewick.profiler'),
+        ])
+        ->tag('console.command');
 };
