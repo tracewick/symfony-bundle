@@ -3,6 +3,10 @@ parameters:
     paths:
         - src
         - tests
+    excludePaths:
+        - tests/Support/MessengerPolyfill
+    bootstrapFiles:
+        - tests/Support/messenger_polyfill.php
     tmpDir: .phpstan.cache
     checkUninitializedProperties: true
     checkBenevolentUnionTypes: true

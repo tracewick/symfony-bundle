@@ -20,6 +20,9 @@ use Tracewick\Runtime\ProfilerConfig;
  *     sample_rate: float,
  *     spool_directory: string|null,
  *     sink: string,
+ *     label_controller: bool,
+ *     profile_console: bool,
+ *     profile_messenger: bool,
  *     base_labels: array<string, string>,
  *     pyroscope: array{
  *         server_url: string|null,
@@ -61,6 +64,18 @@ final class Configuration implements ConfigurationInterface
                 ->scalarNode('sink')
                     ->info('Delivery sink: "spool" (default, production FPM) or "pyroscope" (experiments / non-FPM).')
                     ->defaultValue('spool')
+                ->end()
+                ->booleanNode('label_controller')
+                    ->info('When true, also set a "controller" label from the resolved _controller attribute (opt-in; route name is always labelled).')
+                    ->defaultFalse()
+                ->end()
+                ->booleanNode('profile_console')
+                    ->info('When true, profile Symfony console commands with a "command" label (the command name, never argv). Default false — HTTP only unless opted in.')
+                    ->defaultFalse()
+                ->end()
+                ->booleanNode('profile_messenger')
+                    ->info('When true, profile consumed Messenger messages with a "message" label (FQCN, never payload). Default false — HTTP only unless opted in. Requires symfony/messenger.')
+                    ->defaultFalse()
                 ->end()
                 ->arrayNode('base_labels')
                     ->info('Static series labels only (for example env, runtime). Never put raw URLs or user ids here.')
@@ -194,6 +209,9 @@ final class Configuration implements ConfigurationInterface
                 : ProfilerConfig::DEFAULT_SAMPLE_RATE,
             'spool_directory' => self::nullableString($v['spool_directory'] ?? null),
             'sink' => \is_string($v['sink'] ?? null) ? $v['sink'] : 'spool',
+            'label_controller' => \is_bool($v['label_controller'] ?? null) ? $v['label_controller'] : false,
+            'profile_console' => \is_bool($v['profile_console'] ?? null) ? $v['profile_console'] : false,
+            'profile_messenger' => \is_bool($v['profile_messenger'] ?? null) ? $v['profile_messenger'] : false,
             'base_labels' => $baseLabels,
             'pyroscope' => [
                 'server_url' => self::nullableString($pyroscope['server_url'] ?? null),

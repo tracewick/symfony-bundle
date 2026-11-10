@@ -4,7 +4,7 @@
 [![Coverage](https://codecov.io/gh/tracewick/symfony-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/tracewick/symfony-bundle)
 
 > [!WARNING]
-> Tracewick Symfony Bundle **0.1.x is alpha**. The public API is not stable until 1.0.0 — expect
+> Tracewick Symfony Bundle **0.x is alpha**. The public API is not stable until 1.0.0 — expect
 > breaking changes in minor releases. Pin a version and read the changelog before upgrading.
 
 Official Symfony integration for
@@ -25,20 +25,21 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 
 ## Install
 
+The Flex recipe lives in
+[`symfony/recipes-contrib`](https://github.com/symfony/recipes-contrib)
+(`tracewick/symfony-bundle/0.1`). Enable contrib recipes once per app, then require
+the package:
+
 ```bash
+composer config extra.symfony.allow-contrib true
 composer require tracewick/symfony-bundle
 ```
 
-If Packagist does not list the package yet, pin `dev-develop` from GitHub until the first tag is published.
+Flex registers the bundle, copies a minimal `config/packages/tracewick.yaml`, and
+appends `TRACEWICK_APPLICATION` / `TRACEWICK_SPOOL_DIR` to `.env`.
 
-Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
-
-```bash
-pie install wikimedia/excimer
-php -m | grep -i excimer
-```
-
-Enable the bundle if Flex does not:
+Without Flex (or before the contrib recipe is merged), enable the bundle and copy
+config by hand:
 
 ```php
 // config/bundles.php
@@ -48,27 +49,29 @@ return [
 ];
 ```
 
-Copy the example config into the app (Flex recipe comes later):
-
 ```bash
 cp vendor/tracewick/symfony-bundle/config/packages/tracewick.yaml config/packages/tracewick.yaml
 ```
 
-Set at least the application name and spool directory (env defaults are in the example file):
+Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
 
-```yaml
-# config/packages/tracewick.yaml (excerpt)
-tracewick:
-    enabled: true
-    application_name: '%env(TRACEWICK_APPLICATION)%'
-    sample_rate: 0.1
-    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
-    sink: spool
-    base_labels:
-        env: '%kernel.environment%'
+```bash
+pie install wikimedia/excimer
+php -m | grep -i excimer
 ```
 
-Full example with comments:
+Minimal config (what the recipe installs):
+
+```yaml
+# config/packages/tracewick.yaml
+tracewick:
+    application_name: '%env(TRACEWICK_APPLICATION)%'
+    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
+```
+
+`enabled` defaults to `true`, `sample_rate` to `0.1`, `sink` to `spool`. Optional
+keys (`label_controller`, `profile_console`, `profile_messenger`, `base_labels`,
+Pyroscope) are documented in the fuller example:
 [`config/packages/tracewick.yaml`](config/packages/tracewick.yaml).
 
 ## What it does
@@ -78,12 +81,44 @@ On each **main** HTTP request the bundle:
 1. Starts a unit-of-work profile early (`kernel.request`, priority `4096`) with
    `route=unmatched` and the HTTP method.
 2. After the router (priority `31`), sets the `route` label to the Symfony route **name**
-   (never the raw URI).
+   (never the raw URI). Optionally also sets `controller` when `label_controller: true`.
 3. On `kernel.terminate` (priority `-4096`), stops and flushes to the configured sink.
 
-One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the
-listener and factory boundary (fail-open): bad config or a missing extension disables profiling
-for that worker instead of breaking the request.
+On each **console command** (opt-in: `profile_console: true`):
+
+1. Starts on `console.command` (priority `4096`) with `command=<name>` (never argv).
+2. On `console.terminate` (priority `-4096`), stops and flushes.
+
+On each **consumed Messenger message** (opt-in: `profile_messenger: true`, needs `symfony/messenger`):
+
+1. Middleware starts only when the envelope has a `ReceivedStamp` (worker path), with
+   `message=<FQCN>` (never the payload). Sync `dispatch()` inside HTTP is left to the request profile.
+2. Stops and flushes in `finally` after the rest of the bus stack.
+
+HTTP is profiled by default; console and Messenger stay off until enabled. For
+`messenger:consume`, prefer `profile_messenger: true`. If both flags are on, the console
+subscriber skips `messenger:consume` / `messenger:consume-messages` so the long-lived consumer
+command does not share one unit of work with every message.
+
+One shared `UnitOfWorkProfiler` is built per worker process.
+
+**Fail-open (runtime):** listener/middleware boundaries swallow errors; factory construction
+failures (including a broken logger or an unknown `sink` after env resolve) return a no-op
+profiler so the worker keeps serving. **Not fail-open:** invalid YAML / config-tree values still
+fail at container build / `cache:warmup` — that is intentional so a half-wired profiler never
+reaches request handling. Missing `%env(...)%` values also fail when Symfony resolves service
+arguments, before the factory `try/catch`.
+
+Inspect **this process** counters (collected / dropped / delivered / inactive sampler, …):
+
+```bash
+bin/console tracewick:stats
+```
+
+That command starts a new CLI process, so it shows zeros unless something profiled **in that
+same process**. FPM / RoadRunner / `messenger:consume` counters live in those workers —
+use `HttpProfiler::diagnostics()` from app code there, or scrape host metrics from core when
+configured. Same snapshot API is available as `HttpProfiler::diagnostics()`.
 
 ## Production path
 

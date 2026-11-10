@@ -9,6 +9,8 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
+use Tracewick\Bridge\Symfony\Middleware\TracewickMessengerMiddleware;
 use Tracewick\Sink\ApplicationName;
 
 /**
@@ -28,6 +30,9 @@ final class TracewickExtension extends Extension
          *     sample_rate: float,
          *     spool_directory: ?string,
          *     sink: string,
+         *     label_controller: bool,
+         *     profile_console: bool,
+         *     profile_messenger: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -57,6 +62,9 @@ final class TracewickExtension extends Extension
 
         $container->setParameter('tracewick.config', $config);
         $container->setParameter('tracewick.enabled', $config['enabled']);
+        $container->setParameter('tracewick.label_controller', $config['label_controller']);
+        $container->setParameter('tracewick.profile_console', $config['profile_console']);
+        $container->setParameter('tracewick.profile_messenger', $config['profile_messenger']);
 
         if (!$config['enabled']) {
             return;
@@ -64,5 +72,17 @@ final class TracewickExtension extends Extension
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.php');
+
+        if (!$config['profile_console']) {
+            $container->removeDefinition(TracewickCommandSubscriber::class);
+        }
+
+        // Soft dependency: skip when Messenger is not installed (fail-open).
+        if (
+            !$config['profile_messenger']
+            || !interface_exists(\Symfony\Component\Messenger\Middleware\MiddlewareInterface::class)
+        ) {
+            $container->removeDefinition(TracewickMessengerMiddleware::class);
+        }
     }
 }

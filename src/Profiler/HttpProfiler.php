@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tracewick\Bridge\Symfony\Profiler;
 
+use Tracewick\Runtime\Diagnostics;
+
 /**
- * Narrow HTTP unit-of-work surface for the Symfony subscriber (testable without ext-excimer).
+ * Narrow unit-of-work surface for Symfony subscribers/middleware (testable without ext-excimer).
  */
 interface HttpProfiler
 {
@@ -19,4 +21,9 @@ interface HttpProfiler
     public function stop(): void;
 
     public function flush(): void;
+
+    /**
+     * Snapshot of what this process profiler has done so far (see core runtime.md § Diagnostics).
+     */
+    public function diagnostics(): Diagnostics;
 }

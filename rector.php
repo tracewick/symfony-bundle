@@ -9,6 +9,9 @@ return RectorConfig::configure()
         __DIR__ . '/src',
         __DIR__ . '/tests',
     ])
+    ->withSkip([
+        __DIR__ . '/tests/Support/MessengerPolyfill',
+    ])
     ->withPhpSets(php82: true)
     ->withPreparedSets(
         deadCode: true,

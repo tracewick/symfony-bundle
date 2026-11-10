@@ -22,21 +22,51 @@
                 // Equivalent in unit tests: registerShutdown only installs a process-level callback;
                 // request delivery is asserted via stop()+flush() on the HTTP adapter.
                 "\\$profiler->registerShutdown\\(\\);",
+                // Equivalent: Symfony Bundle::build() is empty; only our compiler pass matters.
+                "parent::build\\(\\$container\\);",
             ]
         },
+        "CastString": {
+            "ignore": [
+                // Equivalent: SymfonyStyle table stringifies ints the same as an explicit (string) cast.
+                "Tracewick\\Bridge\\Symfony\\Command\\StatsCommand::execute",
+            ]
+        },
+        "NullSafeMethodCall": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent: ConsoleTerminateEvent always constructs with a Command; getCommand()
+                // is only typed nullable on the parent. Final event class cannot be doubled.
+                "\\$name = \\$event->getCommand\\(\\)\\?->getName\\(\\);",
+            ]
+        },
+
         "IncrementInteger": {
-            // Equivalent: InvalidConfigurationException code is unused by callers/tests.
-            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+            "ignore": [
+                // Equivalent: InvalidConfigurationException code is unused by callers/tests.
+                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load",
+                // Equivalent: isset($controller[0], $controller[1]) index swaps still fail later
+                // type checks or yield a null controller label.
+                "Tracewick\\Bridge\\Symfony\\EventSubscriber\\TracewickRequestSubscriber::controllerLabel",
+            ]
         },
         "DecrementInteger": {
-            // See IncrementInteger (exception code).
-            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+            "ignore": [
+                // See IncrementInteger (exception code / controllerLabel isset indices).
+                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load",
+                "Tracewick\\Bridge\\Symfony\\EventSubscriber\\TracewickRequestSubscriber::controllerLabel",
+            ]
         },
         "FalseValue": {
             "ignoreSourceCodeByRegex": [
                 // Equivalent under Symfony's Processor: validate callbacks receive tree-typed values;
                 // shape()'s enabled fallback is only for defensive typing of raw arrays.
                 "'enabled' => \\\\is_bool\\(\\$v\\['enabled'\\] \\?\\? null\\) \\? \\$v\\['enabled'\\] : false,",
+                // See enabled (label_controller fallback in shape()).
+                "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
+                // See enabled (profile_console fallback in shape(); default false under Processor).
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
+                // See enabled (profile_messenger fallback in shape(); default false under Processor).
+                "'profile_messenger' => \\\\is_bool\\(\\$v\\['profile_messenger'\\] \\?\\? null\\) \\? \\$v\\['profile_messenger'\\] : false,",
                 // Equivalent in PHPUnit Processor tests: PHP already casts numeric string keys to int
                 // before the tree sees them; normalizeKeys matters for YAML/XML loaders, not these tests.
                 "->normalizeKeys\\(false\\)",
@@ -85,6 +115,7 @@
                 "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
             ]
         },
+
         "LogicalOrAllSubExprNegation": {
             "ignoreSourceCodeByRegex": [
                 // See LogicalOr (sample_rate typing in shape()).
@@ -107,6 +138,12 @@
             "ignoreSourceCodeByRegex": [
                 // See LogicalOr (sample_rate typing in shape()).
                 "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+                // See FalseValue (label_controller fallback in shape()).
+                "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
+                // See FalseValue (profile_console fallback in shape()).
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
+                // See FalseValue (profile_messenger fallback in shape()).
+                "'profile_messenger' => \\\\is_bool\\(\\$v\\['profile_messenger'\\] \\?\\? null\\) \\? \\$v\\['profile_messenger'\\] : false,",
             ]
         },
         "CastFloat": {

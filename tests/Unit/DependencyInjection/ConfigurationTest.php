@@ -27,8 +27,44 @@ final class ConfigurationTest extends TestCase
         self::assertSame(ProfilerConfig::DEFAULT_SAMPLE_RATE, $config['sample_rate']);
         self::assertNull($config['spool_directory']);
         self::assertSame('spool', $config['sink']);
+        self::assertFalse($config['label_controller']);
+        self::assertFalse($config['profile_console']);
+        self::assertFalse($config['profile_messenger']);
         self::assertSame([], $config['base_labels']);
         self::assertNull($config['pyroscope']['server_url']);
+    }
+
+    public function testLabelControllerCanBeEnabled(): void
+    {
+        $config = $this->process([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'label_controller' => true,
+        ]]);
+
+        self::assertTrue($config['label_controller']);
+    }
+
+    public function testProfileConsoleCanBeEnabled(): void
+    {
+        $config = $this->process([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'profile_console' => true,
+        ]]);
+
+        self::assertTrue($config['profile_console']);
+    }
+
+    public function testProfileMessengerCanBeEnabled(): void
+    {
+        $config = $this->process([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'profile_messenger' => true,
+        ]]);
+
+        self::assertTrue($config['profile_messenger']);
     }
 
     public function testValidSpoolConfig(): void

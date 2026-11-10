@@ -150,6 +150,44 @@ final class ProfilerFactoryTest extends TestCase
         self::assertInstanceOf(NullHttpProfiler::class, $profiler);
     }
 
+    public function testCreateReturnsNullProfilerWhenSinkUnknown(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                'Tracewick profiler could not be created; profiling is disabled for this worker.',
+                self::callback(static fn(array $context): bool => self::isFactoryGuardException(
+                    $context,
+                    'Unsupported tracewick.sink "pyroscop"; expected "spool" or "pyroscope".',
+                )),
+            );
+
+        $factory = new ProfilerFactory();
+        $profiler = $factory($this->config([
+            'sink' => 'pyroscop',
+        ]), sys_get_temp_dir(), $logger);
+
+        self::assertInstanceOf(NullHttpProfiler::class, $profiler);
+        $this->assertNullProfilerIsUsable($profiler);
+    }
+
+    public function testCreateReturnsNullProfilerWhenLoggerThrowsDuringWarning(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->willThrowException(new \RuntimeException('logger boom'));
+
+        $factory = new ProfilerFactory();
+        $profiler = $factory($this->config([
+            'application_name' => '',
+        ]), sys_get_temp_dir(), $logger);
+
+        self::assertInstanceOf(NullHttpProfiler::class, $profiler);
+        $this->assertNullProfilerIsUsable($profiler);
+    }
+
     /**
      * @param array<string, mixed> $overrides
      *
@@ -159,6 +197,9 @@ final class ProfilerFactoryTest extends TestCase
      *     sample_rate: float,
      *     spool_directory: ?string,
      *     sink: string,
+     *     label_controller: bool,
+     *     profile_console: bool,
+     *     profile_messenger: bool,
      *     base_labels: array<string, string>,
      *     pyroscope: array{
      *         server_url: ?string,
@@ -176,6 +217,9 @@ final class ProfilerFactoryTest extends TestCase
          *     sample_rate: float,
          *     spool_directory: ?string,
          *     sink: string,
+         *     label_controller: bool,
+         *     profile_console: bool,
+         *     profile_messenger: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -191,6 +235,9 @@ final class ProfilerFactoryTest extends TestCase
             'sample_rate' => 0.1,
             'spool_directory' => sys_get_temp_dir() . '/tracewick-bundle-test-spool',
             'sink' => 'spool',
+            'label_controller' => false,
+            'profile_console' => false,
+            'profile_messenger' => false,
             'base_labels' => ['env' => 'test'],
             'pyroscope' => [
                 'server_url' => null,
@@ -209,6 +256,7 @@ final class ProfilerFactoryTest extends TestCase
         $profiler->label('route', 'app_home');
         $profiler->stop();
         $profiler->flush();
+        self::assertSame(0, $profiler->diagnostics()->collectedProfiles);
     }
 
     /**

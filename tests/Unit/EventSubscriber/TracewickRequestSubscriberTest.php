@@ -27,7 +27,7 @@ final class TracewickRequestSubscriberTest extends TestCase
     protected function setUp(): void
     {
         $this->profiler = $this->createMock(HttpProfiler::class);
-        $this->subscriber = new TracewickRequestSubscriber($this->profiler);
+        $this->subscriber = new TracewickRequestSubscriber($this->profiler, labelController: false);
     }
 
     public function testSubscribedEventsMatchDemoPriorities(): void
@@ -67,6 +67,141 @@ final class TracewickRequestSubscriberTest extends TestCase
         $event->getRequest()->attributes->set('_route', 'app_home');
 
         $this->subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteSkipsControllerWhenDisabled(): void
+    {
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $this->subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteDefaultsToSkippingController(): void
+    {
+        // Omit labelController so Infection cannot hide behind an explicit `false` argument.
+        $subscriber = new TracewickRequestSubscriber($this->profiler);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteAlsoLabelsControllerWhenEnabled(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', 'App\\Controller\\HomeController::index'],
+        ], $calls);
+    }
+
+    public function testLabelRouteFormatsArrayController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', ['App\\Controller\\HomeController', 'index']);
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', 'App\\Controller\\HomeController::index'],
+        ], $calls);
+    }
+
+    public function testLabelRouteFormatsObjectController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $controller = new class {
+            public function index(): void {}
+        };
+
+        // Build the callable as Symfony stores object controllers; keep it an array
+        // so Rector cannot rewrite this fixture into a first-class callable Closure.
+        $controllerAttr = [$controller];
+        $controllerAttr[1] = 'index';
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', $controllerAttr);
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', $controller::class . '::index'],
+        ], $calls);
+    }
+
+    public function testLabelRouteSkipsUnrecognizedController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', ['', 'index']);
+
+        $subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteSkipsArrayAccessController(): void
+    {
+        // ArrayObject looks callable-shaped via offsets but is not a PHP array; require is_array().
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set(
+            '_controller',
+            new \ArrayObject(['App\\Controller\\HomeController', 'index']),
+        );
+
+        $subscriber->labelRoute($event);
     }
 
     public function testLabelRouteSkipsMissingRoute(): void
