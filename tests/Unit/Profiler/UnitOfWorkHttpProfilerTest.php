@@ -36,5 +36,7 @@ final class UnitOfWorkHttpProfilerTest extends TestCase
         self::assertCount(1, $sink->sent);
         self::assertSame('app_home', $sink->sent[0]->labels->get('route'));
         self::assertSame('GET', $sink->sent[0]->labels->get('method'));
+        self::assertSame(1, $adapter->diagnostics()->collectedProfiles);
+        self::assertSame(1, $adapter->diagnostics()->deliveredProfiles);
     }
 }

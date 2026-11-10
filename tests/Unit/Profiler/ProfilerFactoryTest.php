@@ -218,6 +218,7 @@ final class ProfilerFactoryTest extends TestCase
         $profiler->label('route', 'app_home');
         $profiler->stop();
         $profiler->flush();
+        self::assertSame(0, $profiler->diagnostics()->collectedProfiles);
     }
 
     /**

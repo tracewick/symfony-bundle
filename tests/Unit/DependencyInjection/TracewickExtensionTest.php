@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Tracewick\Bridge\Symfony\Command\StatsCommand;
 use Tracewick\Bridge\Symfony\DependencyInjection\Configuration;
 use Tracewick\Bridge\Symfony\DependencyInjection\TracewickExtension;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
@@ -52,8 +53,12 @@ final class TracewickExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
         self::assertFalse($container->hasDefinition(TracewickCommandSubscriber::class));
         self::assertFalse($container->hasDefinition(TracewickMessengerMiddleware::class));
+        self::assertTrue($container->hasDefinition(StatsCommand::class));
         self::assertTrue(
             $container->getDefinition(TracewickRequestSubscriber::class)->hasTag('kernel.event_subscriber'),
+        );
+        self::assertTrue(
+            $container->getDefinition(StatsCommand::class)->hasTag('console.command'),
         );
     }
 

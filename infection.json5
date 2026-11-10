@@ -22,8 +22,17 @@
                 // Equivalent in unit tests: registerShutdown only installs a process-level callback;
                 // request delivery is asserted via stop()+flush() on the HTTP adapter.
                 "\\$profiler->registerShutdown\\(\\);",
+                // Equivalent: Symfony Bundle::build() is empty; only our compiler pass matters.
+                "parent::build\\(\\$container\\);",
             ]
         },
+        "CastString": {
+            "ignore": [
+                // Equivalent: SymfonyStyle table stringifies ints the same as an explicit (string) cast.
+                "Tracewick\\Bridge\\Symfony\\Command\\StatsCommand::execute",
+            ]
+        },
+
         "IncrementInteger": {
             "ignore": [
                 // Equivalent: InvalidConfigurationException code is unused by callers/tests.
