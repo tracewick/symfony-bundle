@@ -68,6 +68,7 @@ final class AddTracewickMessengerMiddlewarePassTest extends TestCase
         $container = new ContainerBuilder();
         $container->setDefinition(TracewickMessengerMiddleware::class, new Definition(TracewickMessengerMiddleware::class));
         $container->setParameter('app.http.middleware', ['not', 'bus', 'shape']);
+        $container->setParameter('app.scalar.middleware', 'not-an-array');
         $container->setParameter('messenger.bus.default.middleware', [
             ['id' => 'send_message'],
         ]);
@@ -75,6 +76,7 @@ final class AddTracewickMessengerMiddlewarePassTest extends TestCase
         (new AddTracewickMessengerMiddlewarePass())->process($container);
 
         self::assertSame(['not', 'bus', 'shape'], $container->getParameter('app.http.middleware'));
+        self::assertSame('not-an-array', $container->getParameter('app.scalar.middleware'));
         self::assertSame([
             ['id' => TracewickMessengerMiddleware::class],
             ['id' => 'send_message'],
