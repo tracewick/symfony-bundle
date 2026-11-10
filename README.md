@@ -42,8 +42,9 @@ return [
 ];
 ```
 
-Full YAML defaults and the HTTP subscriber ship in a follow-up. Until then, see the hand-rolled
-Demo wiring in the core repository
+Copy [`config/packages/tracewick.yaml`](config/packages/tracewick.yaml) into your app (Flex recipe
+later). The HTTP subscriber ships next; until then you can still study the hand-rolled Demo wiring
+in the core repository
 (`docker/reference-app/overlay/src/EventSubscriber/TracewickSubscriber.php`).
 
 ## Production path
