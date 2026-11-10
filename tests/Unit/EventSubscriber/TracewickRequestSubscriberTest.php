@@ -82,6 +82,21 @@ final class TracewickRequestSubscriberTest extends TestCase
         $this->subscriber->labelRoute($event);
     }
 
+    public function testLabelRouteDefaultsToSkippingController(): void
+    {
+        // Omit labelController so Infection cannot hide behind an explicit `false` argument.
+        $subscriber = new TracewickRequestSubscriber($this->profiler);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $subscriber->labelRoute($event);
+    }
+
     public function testLabelRouteAlsoLabelsControllerWhenEnabled(): void
     {
         $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
@@ -167,6 +182,24 @@ final class TracewickRequestSubscriberTest extends TestCase
         $event = $this->requestEvent(main: true);
         $event->getRequest()->attributes->set('_route', 'app_home');
         $event->getRequest()->attributes->set('_controller', ['', 'index']);
+
+        $subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteSkipsArrayAccessController(): void
+    {
+        // ArrayObject looks callable-shaped via offsets but is not a PHP array; require is_array().
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set(
+            '_controller',
+            new \ArrayObject(['App\\Controller\\HomeController', 'index']),
+        );
 
         $subscriber->labelRoute($event);
     }

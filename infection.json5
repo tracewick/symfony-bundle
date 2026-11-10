@@ -25,18 +25,28 @@
             ]
         },
         "IncrementInteger": {
-            // Equivalent: InvalidConfigurationException code is unused by callers/tests.
-            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+            "ignore": [
+                // Equivalent: InvalidConfigurationException code is unused by callers/tests.
+                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load",
+                // Equivalent: isset($controller[0], $controller[1]) index swaps still fail later
+                // type checks or yield a null controller label.
+                "Tracewick\\Bridge\\Symfony\\EventSubscriber\\TracewickRequestSubscriber::controllerLabel",
+            ]
         },
         "DecrementInteger": {
-            // See IncrementInteger (exception code).
-            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+            "ignore": [
+                // See IncrementInteger (exception code / controllerLabel isset indices).
+                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load",
+                "Tracewick\\Bridge\\Symfony\\EventSubscriber\\TracewickRequestSubscriber::controllerLabel",
+            ]
         },
         "FalseValue": {
             "ignoreSourceCodeByRegex": [
                 // Equivalent under Symfony's Processor: validate callbacks receive tree-typed values;
                 // shape()'s enabled fallback is only for defensive typing of raw arrays.
                 "'enabled' => \\\\is_bool\\(\\$v\\['enabled'\\] \\?\\? null\\) \\? \\$v\\['enabled'\\] : false,",
+                // See enabled (label_controller fallback in shape()).
+                "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
                 // Equivalent in PHPUnit Processor tests: PHP already casts numeric string keys to int
                 // before the tree sees them; normalizeKeys matters for YAML/XML loaders, not these tests.
                 "->normalizeKeys\\(false\\)",
@@ -107,6 +117,8 @@
             "ignoreSourceCodeByRegex": [
                 // See LogicalOr (sample_rate typing in shape()).
                 "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+                // See FalseValue (label_controller fallback in shape()).
+                "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
             ]
         },
         "CastFloat": {
