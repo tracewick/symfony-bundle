@@ -25,20 +25,21 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 
 ## Install
 
+The Flex recipe lives in
+[`symfony/recipes-contrib`](https://github.com/symfony/recipes-contrib)
+(`tracewick/symfony-bundle/0.1`). Enable contrib recipes once per app, then require
+the package:
+
 ```bash
+composer config extra.symfony.allow-contrib true
 composer require tracewick/symfony-bundle
 ```
 
-If Packagist does not list the package yet, pin `dev-develop` from GitHub until the first tag is published.
+Flex registers the bundle, copies a minimal `config/packages/tracewick.yaml`, and
+appends `TRACEWICK_APPLICATION` / `TRACEWICK_SPOOL_DIR` to `.env`.
 
-Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
-
-```bash
-pie install wikimedia/excimer
-php -m | grep -i excimer
-```
-
-Enable the bundle if Flex does not:
+Without Flex (or before the contrib recipe is merged), enable the bundle and copy
+config by hand:
 
 ```php
 // config/bundles.php
@@ -48,27 +49,29 @@ return [
 ];
 ```
 
-Copy the example config into the app (Flex recipe comes later):
-
 ```bash
 cp vendor/tracewick/symfony-bundle/config/packages/tracewick.yaml config/packages/tracewick.yaml
 ```
 
-Set at least the application name and spool directory (env defaults are in the example file):
+Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
 
-```yaml
-# config/packages/tracewick.yaml (excerpt)
-tracewick:
-    enabled: true
-    application_name: '%env(TRACEWICK_APPLICATION)%'
-    sample_rate: 0.1
-    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
-    sink: spool
-    base_labels:
-        env: '%kernel.environment%'
+```bash
+pie install wikimedia/excimer
+php -m | grep -i excimer
 ```
 
-Full example with comments:
+Minimal config (what the recipe installs):
+
+```yaml
+# config/packages/tracewick.yaml
+tracewick:
+    application_name: '%env(TRACEWICK_APPLICATION)%'
+    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
+```
+
+`enabled` defaults to `true`, `sample_rate` to `0.1`, `sink` to `spool`. Optional
+keys (`label_controller`, `profile_console`, `profile_messenger`, `base_labels`,
+Pyroscope) are documented in the fuller example:
 [`config/packages/tracewick.yaml`](config/packages/tracewick.yaml).
 
 ## What it does
