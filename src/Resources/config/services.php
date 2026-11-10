@@ -24,6 +24,9 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(HttpProfiler::class, 'tracewick.profiler');
 
     $services->set(TracewickRequestSubscriber::class)
-        ->args([service('tracewick.profiler')])
+        ->args([
+            service('tracewick.profiler'),
+            param('tracewick.label_controller'),
+        ])
         ->tag('kernel.event_subscriber');
 };

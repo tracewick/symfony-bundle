@@ -78,7 +78,7 @@ On each **main** HTTP request the bundle:
 1. Starts a unit-of-work profile early (`kernel.request`, priority `4096`) with
    `route=unmatched` and the HTTP method.
 2. After the router (priority `31`), sets the `route` label to the Symfony route **name**
-   (never the raw URI).
+   (never the raw URI). Optionally also sets `controller` when `label_controller: true`.
 3. On `kernel.terminate` (priority `-4096`), stops and flushes to the configured sink.
 
 One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the

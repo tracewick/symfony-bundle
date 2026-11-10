@@ -19,6 +19,8 @@ tracewick:
     sample_rate: 0.1
     spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
     sink: '%env(TRACEWICK_SINK)%'
+    # Optional: also label the resolved controller (default false; route name is always set).
+    # label_controller: true
     base_labels:
         env: '%kernel.environment%'
         # runtime: fpm   # or rr / frankenphp — set statically per deploy

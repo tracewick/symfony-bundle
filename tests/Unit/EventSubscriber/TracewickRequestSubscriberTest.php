@@ -27,7 +27,7 @@ final class TracewickRequestSubscriberTest extends TestCase
     protected function setUp(): void
     {
         $this->profiler = $this->createMock(HttpProfiler::class);
-        $this->subscriber = new TracewickRequestSubscriber($this->profiler);
+        $this->subscriber = new TracewickRequestSubscriber($this->profiler, labelController: false);
     }
 
     public function testSubscribedEventsMatchDemoPriorities(): void
@@ -67,6 +67,63 @@ final class TracewickRequestSubscriberTest extends TestCase
         $event->getRequest()->attributes->set('_route', 'app_home');
 
         $this->subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteSkipsControllerWhenDisabled(): void
+    {
+        $this->profiler->expects(self::once())
+            ->method('label')
+            ->with('route', 'app_home');
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $this->subscriber->labelRoute($event);
+    }
+
+    public function testLabelRouteAlsoLabelsControllerWhenEnabled(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', 'App\\Controller\\HomeController::index');
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', 'App\\Controller\\HomeController::index'],
+        ], $calls);
+    }
+
+    public function testLabelRouteFormatsArrayController(): void
+    {
+        $subscriber = new TracewickRequestSubscriber($this->profiler, labelController: true);
+        $calls = [];
+        $this->profiler->expects(self::exactly(2))
+            ->method('label')
+            ->willReturnCallback(static function (string $key, string $value) use (&$calls): void {
+                $calls[] = [$key, $value];
+            });
+
+        $event = $this->requestEvent(main: true);
+        $event->getRequest()->attributes->set('_route', 'app_home');
+        $event->getRequest()->attributes->set('_controller', ['App\\Controller\\HomeController', 'index']);
+
+        $subscriber->labelRoute($event);
+
+        self::assertSame([
+            ['route', 'app_home'],
+            ['controller', 'App\\Controller\\HomeController::index'],
+        ], $calls);
     }
 
     public function testLabelRouteSkipsMissingRoute(): void
