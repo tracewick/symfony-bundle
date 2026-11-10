@@ -10,6 +10,7 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Tracewick\Bridge\Symfony\DependencyInjection\Configuration;
 use Tracewick\Bridge\Symfony\DependencyInjection\TracewickExtension;
+use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickRequestSubscriber;
 use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
 
@@ -39,13 +40,19 @@ final class TracewickExtensionTest extends TestCase
         self::assertSame(0.25, $config['sample_rate']);
         self::assertSame('/var/spool/tracewick', $config['spool_directory']);
         self::assertFalse($config['label_controller']);
+        self::assertTrue($config['profile_console']);
         self::assertSame(['env' => 'test'], $config['base_labels']);
         self::assertFalse($container->getParameter('tracewick.label_controller'));
+        self::assertTrue($container->getParameter('tracewick.profile_console'));
         self::assertTrue($container->hasDefinition('tracewick.profiler'));
         self::assertTrue($container->hasAlias(HttpProfiler::class));
         self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
+        self::assertTrue($container->hasDefinition(TracewickCommandSubscriber::class));
         self::assertTrue(
             $container->getDefinition(TracewickRequestSubscriber::class)->hasTag('kernel.event_subscriber'),
+        );
+        self::assertTrue(
+            $container->getDefinition(TracewickCommandSubscriber::class)->hasTag('kernel.event_subscriber'),
         );
     }
 
@@ -64,6 +71,22 @@ final class TracewickExtensionTest extends TestCase
         /** @var TracewickConfig $config */
         $config = $container->getParameter('tracewick.config');
         self::assertTrue($config['label_controller']);
+    }
+
+    public function testLoadRemovesCommandSubscriberWhenProfileConsoleDisabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new TracewickExtension();
+
+        $extension->load([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'profile_console' => false,
+        ]], $container);
+
+        self::assertFalse($container->getParameter('tracewick.profile_console'));
+        self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
+        self::assertFalse($container->hasDefinition(TracewickCommandSubscriber::class));
     }
 
     public function testLoadAcceptsDisabledWithoutRequiredFields(): void
