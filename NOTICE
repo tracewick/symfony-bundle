@@ -1,0 +1,10 @@
+Tracewick Symfony Bundle
+Copyright 2026 The Tracewick Authors
+
+This product includes software developed by The Tracewick Authors
+(https://github.com/tracewick/symfony-bundle).
+
+It depends on Tracewick (https://github.com/tracewick/tracewick), an independent
+implementation whose design was informed by a review of Excimetry
+(https://github.com/excimetry/excimetry), which is licensed under the Apache
+License 2.0. No source code from Excimetry is included in this product.

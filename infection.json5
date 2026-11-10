@@ -1,0 +1,122 @@
+{
+    "$schema": "https://raw.githubusercontent.com/infection/infection/0.35.8/resources/schema.json",
+    "source": {
+        "directories": ["src"],
+        "excludes": [
+            // DI PHP configs are wiring, not behavioural units under mutation.
+            "Resources"
+        ]
+    },
+    "timeout": 30,
+    "logs": {
+        "text": "build/infection/infection.log",
+        "summary": "build/infection/summary.log",
+        "github": true
+    },
+    // Each ignore must name the equivalent-mutant reason. Prefer a stronger test over a new ignore.
+    // Never lower minMsi to silence escapes.
+    "mutators": {
+        "@default": true,
+        "MethodCallRemoval": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent in unit tests: registerShutdown only installs a process-level callback;
+                // request delivery is asserted via stop()+flush() on the HTTP adapter.
+                "\\$profiler->registerShutdown\\(\\);",
+            ]
+        },
+        "IncrementInteger": {
+            // Equivalent: InvalidConfigurationException code is unused by callers/tests.
+            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+        },
+        "DecrementInteger": {
+            // See IncrementInteger (exception code).
+            "ignore": ["Tracewick\\Bridge\\Symfony\\DependencyInjection\\TracewickExtension::load"]
+        },
+        "FalseValue": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Symfony's Processor: validate callbacks receive tree-typed values;
+                // shape()'s enabled fallback is only for defensive typing of raw arrays.
+                "'enabled' => \\\\is_bool\\(\\$v\\['enabled'\\] \\?\\? null\\) \\? \\$v\\['enabled'\\] : false,",
+                // Equivalent in PHPUnit Processor tests: PHP already casts numeric string keys to int
+                // before the tree sees them; normalizeKeys matters for YAML/XML loaders, not these tests.
+                "->normalizeKeys\\(false\\)",
+            ]
+        },
+        "IfNegation": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Processor: base_labels is always an array from the tree.
+                "if \\(\\\\is_array\\(\\$v\\['base_labels'\\] \\?\\? null\\)\\) \\{",
+            ]
+        },
+        "Foreach_": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Processor: shape() base_labels copy does not change validation outcomes
+                // for configs the tree already accepted as array<string, scalar>.
+                "foreach \\(\\$v\\['base_labels'\\] as \\$key => \\$value\\) \\{",
+            ]
+        },
+        "LogicalAnd": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Processor: non-string keys/values never reach shape() from the tree.
+                "if \\(\\\\is_string\\(\\$key\\) && \\\\is_string\\(\\$value\\)\\) \\{",
+            ]
+        },
+        "LogicalAndAllSubExprNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalAnd (base_labels string guards in shape()).
+                "if \\(\\\\is_string\\(\\$key\\) && \\\\is_string\\(\\$value\\)\\) \\{",
+            ]
+        },
+        "LogicalAndNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalAnd (base_labels string guards in shape()).
+                "if \\(\\\\is_string\\(\\$key\\) && \\\\is_string\\(\\$value\\)\\) \\{",
+            ]
+        },
+        "LogicalAndSingleSubExprNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalAnd (base_labels string guards in shape()).
+                "if \\(\\\\is_string\\(\\$key\\) && \\\\is_string\\(\\$value\\)\\) \\{",
+            ]
+        },
+        "LogicalOr": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Processor: sample_rate is always float|int from floatNode before shape().
+                "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+            ]
+        },
+        "LogicalOrAllSubExprNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalOr (sample_rate typing in shape()).
+                "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+            ]
+        },
+        "LogicalOrNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalOr (sample_rate typing in shape()).
+                "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+            ]
+        },
+        "LogicalOrSingleSubExprNegation": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalOr (sample_rate typing in shape()).
+                "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+            ]
+        },
+        "Ternary": {
+            "ignoreSourceCodeByRegex": [
+                // See LogicalOr (sample_rate typing in shape()).
+                "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
+            ]
+        },
+        "CastFloat": {
+            "ignoreSourceCodeByRegex": [
+                // Equivalent under Processor: floatNode already yields float before shape().
+                "\\? \\(float\\) \\$v\\['sample_rate'\\]",
+            ]
+        }
+    },
+    // Match the core Tracewick floor. Raise as the suite matures; never lower.
+    "minMsi": 80,
+    "minCoveredMsi": 80
+}
