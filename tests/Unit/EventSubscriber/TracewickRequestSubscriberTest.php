@@ -140,9 +140,14 @@ final class TracewickRequestSubscriberTest extends TestCase
             public function index(): void {}
         };
 
+        // Build the callable as Symfony stores object controllers; keep it an array
+        // so Rector cannot rewrite this fixture into a first-class callable Closure.
+        $controllerAttr = [$controller];
+        $controllerAttr[1] = 'index';
+
         $event = $this->requestEvent(main: true);
         $event->getRequest()->attributes->set('_route', 'app_home');
-        $event->getRequest()->attributes->set('_controller', [$controller, 'index']);
+        $event->getRequest()->attributes->set('_controller', $controllerAttr);
 
         $subscriber->labelRoute($event);
 
