@@ -49,19 +49,7 @@ final class HttpSpoolFunctionalTest extends TestCase
             $this->kernel = null;
         }
 
-        // Pop only Symfony's ErrorHandler when it is still on the stack (PHPUnit flags leftovers
-        // as risky on Symfony 6.4 lowest). Do not wipe PHPUnit's own handlers.
-        $exceptionHandler = set_exception_handler(static fn(\Throwable $e): null => null);
-        restore_exception_handler();
-        if (\is_object($exceptionHandler) && str_starts_with($exceptionHandler::class, 'Symfony\\Component\\ErrorHandler\\')) {
-            restore_exception_handler();
-        }
-
-        $errorHandler = set_error_handler(static fn(): bool => false);
-        restore_error_handler();
-        if (\is_object($errorHandler) && str_starts_with($errorHandler::class, 'Symfony\\Component\\ErrorHandler\\')) {
-            restore_error_handler();
-        }
+        $this->restoreSymfonyErrorHandlers();
 
         if (null !== $this->previousErrorLog) {
             ini_set('error_log', $this->previousErrorLog);
@@ -199,6 +187,40 @@ final class HttpSpoolFunctionalTest extends TestCase
         }
 
         return $container;
+    }
+
+    /**
+     * Symfony registers handlers as [$errorHandler, 'handleException'] — not as the object itself.
+     */
+    private function restoreSymfonyErrorHandlers(): void
+    {
+        for ($i = 0; $i < 5; ++$i) {
+            $previous = set_exception_handler(static fn(\Throwable $e): null => null);
+            restore_exception_handler();
+            if (!$this->isSymfonyErrorHandler($previous)) {
+                break;
+            }
+            restore_exception_handler();
+        }
+
+        for ($i = 0; $i < 5; ++$i) {
+            $previous = set_error_handler(static fn(): bool => false);
+            restore_error_handler();
+            if (!$this->isSymfonyErrorHandler($previous)) {
+                break;
+            }
+            restore_error_handler();
+        }
+    }
+
+    private function isSymfonyErrorHandler(mixed $handler): bool
+    {
+        if (\is_array($handler) && isset($handler[0]) && \is_object($handler[0])) {
+            $handler = $handler[0];
+        }
+
+        return \is_object($handler)
+            && str_starts_with($handler::class, 'Symfony\\Component\\ErrorHandler\\');
     }
 
     /**
