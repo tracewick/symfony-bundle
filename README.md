@@ -5,34 +5,40 @@
 
 > **Early development — not for production.**
 >
-> This package is unfinished public scaffolding. There is **no** tagged release yet, the HTTP
-> subscriber / config tree are still in progress, and the API may change without notice. Do not
-> depend on it in real apps until `0.1.0`. Prefer the hand-rolled Demo wiring in
-> [`tracewick/tracewick`](https://github.com/tracewick/tracewick) until then.
+> Public scaffolding toward `0.1.0`. There is **no** tagged release yet; pin `dev-develop` only for
+> experiments. The HTTP subscriber and config tree work on `develop`, but the API may still change
+> before the first tag.
 
 Official Symfony integration for
 [`tracewick/tracewick`](https://github.com/tracewick/tracewick) — a PHP sampling profiler on
-ext-excimer that writes profiles to a local spool (recommended) or optionally to Grafana
-Pyroscope.
+[ext-excimer](https://www.mediawiki.org/wiki/Excimer) that writes profiles to a local spool
+(recommended) or optionally to Grafana Pyroscope.
 
 ## Requirements
 
 | | |
 |---|---|
 | PHP | 8.2–8.5 |
-| Symfony | 6.4 / 7.x / 8.x |
+| Symfony | 6.4 / 7.x / 8.x (CI matrix: **6.4**, **7.4**, **8.1**) |
 | Tracewick | `^0.2` |
-| ext-excimer | suggested (no-op without it) |
+| ext-excimer | suggested (fail-open no-op without it) |
 
 Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 
-## Install (preview)
+## Install
 
 ```bash
 composer require tracewick/symfony-bundle:dev-develop
 ```
 
-Enable the bundle if Flex does not do it for you:
+Install the extension separately when you want samples (prefer [PIE](https://php.github.io/pie/)):
+
+```bash
+pie install wikimedia/excimer
+php -m | grep -i excimer
+```
+
+Enable the bundle if Flex does not:
 
 ```php
 // config/bundles.php
@@ -42,31 +48,82 @@ return [
 ];
 ```
 
-Copy [`config/packages/tracewick.yaml`](config/packages/tracewick.yaml) into your app (Flex recipe
-later). The HTTP subscriber ships next; until then you can still study the hand-rolled Demo wiring
-in the core repository
-(`docker/reference-app/overlay/src/EventSubscriber/TracewickSubscriber.php`).
+Copy the example config into the app (Flex recipe comes later):
+
+```bash
+cp vendor/tracewick/symfony-bundle/config/packages/tracewick.yaml config/packages/tracewick.yaml
+```
+
+Set at least the application name and spool directory (env defaults are in the example file):
+
+```yaml
+# config/packages/tracewick.yaml (excerpt)
+tracewick:
+    enabled: true
+    application_name: '%env(TRACEWICK_APPLICATION)%'
+    sample_rate: 0.1
+    spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
+    sink: spool
+    base_labels:
+        env: '%kernel.environment%'
+```
+
+Full example with comments:
+[`config/packages/tracewick.yaml`](config/packages/tracewick.yaml).
+
+## What it does
+
+On each **main** HTTP request the bundle:
+
+1. Starts a unit-of-work profile early (`kernel.request`, priority `4096`) with
+   `route=unmatched` and the HTTP method.
+2. After the router (priority `31`), sets the `route` label to the Symfony route **name**
+   (never the raw URI).
+3. On `kernel.terminate` (priority `-4096`), stops and flushes to the configured sink.
+
+One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the
+listener and factory boundary (fail-open): bad config or a missing extension disables profiling
+for that worker instead of breaking the request.
 
 ## Production path
 
-- Prefer **`SpoolSink`** from the request worker.
-- Run [`tracewick-drain`](https://github.com/tracewick/tracewick/blob/main/docs/drain.md) or the
-  [Go agent](https://github.com/tracewick/agent) beside the app to deliver spool files to
-  Pyroscope.
-- Direct `PyroscopeSink` from FPM is for experiments only.
+- Prefer **`SpoolSink`** (`sink: spool`) from the request worker.
+- Deliver spool files with
+  [`tracewick-drain`](https://github.com/tracewick/tracewick/blob/main/docs/drain.md) or the
+  [Go agent](https://github.com/tracewick/agent) beside the app.
+- Direct `sink: pyroscope` from PHP-FPM is for experiments only — not the default.
+
+```bash
+vendor/bin/tracewick-drain \
+  --spool-dir=/var/spool/tracewick \
+  --pyroscope-url=http://127.0.0.1:4040
+```
+
+Put the spool on a **local** volume or tmpfs. Details:
+[core runtime](https://github.com/tracewick/tracewick/blob/main/docs/runtime.md),
+[drain](https://github.com/tracewick/tracewick/blob/main/docs/drain.md).
 
 ## Kill switch
 
-Honoured by Tracewick core (see [`docs/runtime.md`](https://github.com/tracewick/tracewick/blob/main/docs/runtime.md)):
+Turn profiling off without a deploy:
 
-- `TRACEWICK_DISABLE_FILE` — if the path exists, profiling is off
-- `TRACEWICK_ENABLED` — `0` / `false` / `off` / `no` disables
+| Layer | How |
+|---|---|
+| Bundle | `tracewick.enabled: false` (no subscriber / profiler services) |
+| Core | `TRACEWICK_DISABLE_FILE` — if the path exists, profiling is off |
+| Core | `TRACEWICK_ENABLED=0` / `false` / `off` / `no` |
+
+Core kill switches still apply when the bundle is enabled. See
+[`docs/runtime.md`](https://github.com/tracewick/tracewick/blob/main/docs/runtime.md).
+
+Without **ext-excimer**, Tracewick is a no-op (warn once, then idle). The app keeps serving.
 
 ## Development
 
 ```bash
 composer install
 make ci
+make infection   # needs the Infection PHAR (same version as CI)
 ```
 
 ## License
