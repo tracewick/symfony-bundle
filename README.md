@@ -1,5 +1,8 @@
 # Tracewick Symfony Bundle
 
+[![CI](https://github.com/tracewick/symfony-bundle/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/tracewick/symfony-bundle/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/tracewick/symfony-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/tracewick/symfony-bundle)
+
 > **Early development — not for production.**
 >
 > This package is unfinished public scaffolding. There is **no** tagged release yet, the HTTP

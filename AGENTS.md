@@ -45,4 +45,6 @@ Do not push blind and fix style/stan/rector on GitHub.
 - Default sink = spool; default `sampleRate` = `0.1`; labels = route name (not raw path).
 - English only. Conventional Commits. No AI co-authorship trailers.
 - Follow git flow: `feature/*` → PR into `develop`. Never push to `main` or `develop` directly.
+- Do not edit `CHANGELOG.md` in a feature branch; release-please owns it.
 - After opening or pushing a PR, babysit checks and review threads until review-ready or blocked.
+  Treat `codecov/project` and `codecov/patch` as first-class gates when present.
