@@ -86,7 +86,15 @@ On each **console command** (opt-in: `profile_console: true`):
 1. Starts on `console.command` (priority `4096`) with `command=<name>` (never argv).
 2. On `console.terminate` (priority `-4096`), stops and flushes.
 
-HTTP is profiled by default; console (and later Messenger) stay off until enabled.
+On each **consumed Messenger message** (opt-in: `profile_messenger: true`, needs `symfony/messenger`):
+
+1. Middleware starts only when the envelope has a `ReceivedStamp` (worker path), with
+   `message=<FQCN>` (never the payload). Sync `dispatch()` inside HTTP is left to the request profile.
+2. Stops and flushes in `finally` after the rest of the bus stack.
+
+HTTP is profiled by default; console and Messenger stay off until enabled. For
+`messenger:consume`, prefer `profile_messenger: true` and leave `profile_console` false so the
+long-lived consumer command does not share one unit of work with every message.
 
 One shared `UnitOfWorkProfiler` is built per worker process. Failures are swallowed at the
 listener and factory boundary (fail-open): bad config or a missing extension disables profiling

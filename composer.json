@@ -50,10 +50,12 @@
         "shipmonk/composer-dependency-analyser": "^1.8",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/messenger": "^6.4 || ^7.0 || ^8.0",
         "symfony/routing": "^6.4 || ^7.0 || ^8.0"
     },
     "suggest": {
-        "ext-excimer": "Required to collect profiles (install with PIE: https://php.github.io/pie/ — pie install wikimedia/excimer)"
+        "ext-excimer": "Required to collect profiles (install with PIE: https://php.github.io/pie/ — pie install wikimedia/excimer)",
+        "symfony/messenger": "Required when enabling tracewick.profile_messenger"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
@@ -65,7 +67,13 @@
     "autoload-dev": {
         "psr-4": {
             "Tracewick\\Bridge\\Symfony\\Tests\\": "tests/"
-        }
+        },
+        "files": [
+            "tests/Support/messenger_polyfill.php"
+        ],
+        "exclude-from-classmap": [
+            "tests/Support/MessengerPolyfill/"
+        ]
     },
     "config": {
         "allow-plugins": {
@@ -102,7 +110,7 @@
             "@infection:ci"
         ],
         "infection:ci": "infection --coverage=build/coverage --skip-initial-tests --threads=max --show-mutations",
-        "normalize:check": "@composer normalize --dry-run --diff",
+        "normalize:check": "@composer normalize --dry-run --diff --no-check-lock --no-update-lock",
         "rector:check": "rector process --dry-run",
         "rector:fix": "rector process",
         "stan": "phpstan analyse --memory-limit=1G",

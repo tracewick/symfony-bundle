@@ -161,6 +161,7 @@ final class ProfilerFactoryTest extends TestCase
      *     sink: string,
      *     label_controller: bool,
      *     profile_console: bool,
+     *     profile_messenger: bool,
      *     base_labels: array<string, string>,
      *     pyroscope: array{
      *         server_url: ?string,
@@ -180,6 +181,7 @@ final class ProfilerFactoryTest extends TestCase
          *     sink: string,
          *     label_controller: bool,
          *     profile_console: bool,
+         *     profile_messenger: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -197,6 +199,7 @@ final class ProfilerFactoryTest extends TestCase
             'sink' => 'spool',
             'label_controller' => false,
             'profile_console' => false,
+            'profile_messenger' => false,
             'base_labels' => ['env' => 'test'],
             'pyroscope' => [
                 'server_url' => null,

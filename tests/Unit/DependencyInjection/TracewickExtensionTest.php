@@ -12,6 +12,7 @@ use Tracewick\Bridge\Symfony\DependencyInjection\Configuration;
 use Tracewick\Bridge\Symfony\DependencyInjection\TracewickExtension;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickCommandSubscriber;
 use Tracewick\Bridge\Symfony\EventSubscriber\TracewickRequestSubscriber;
+use Tracewick\Bridge\Symfony\Middleware\TracewickMessengerMiddleware;
 use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
 
 /**
@@ -41,13 +42,16 @@ final class TracewickExtensionTest extends TestCase
         self::assertSame('/var/spool/tracewick', $config['spool_directory']);
         self::assertFalse($config['label_controller']);
         self::assertFalse($config['profile_console']);
+        self::assertFalse($config['profile_messenger']);
         self::assertSame(['env' => 'test'], $config['base_labels']);
         self::assertFalse($container->getParameter('tracewick.label_controller'));
         self::assertFalse($container->getParameter('tracewick.profile_console'));
+        self::assertFalse($container->getParameter('tracewick.profile_messenger'));
         self::assertTrue($container->hasDefinition('tracewick.profiler'));
         self::assertTrue($container->hasAlias(HttpProfiler::class));
         self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
         self::assertFalse($container->hasDefinition(TracewickCommandSubscriber::class));
+        self::assertFalse($container->hasDefinition(TracewickMessengerMiddleware::class));
         self::assertTrue(
             $container->getDefinition(TracewickRequestSubscriber::class)->hasTag('kernel.event_subscriber'),
         );
@@ -87,6 +91,23 @@ final class TracewickExtensionTest extends TestCase
         self::assertTrue(
             $container->getDefinition(TracewickCommandSubscriber::class)->hasTag('kernel.event_subscriber'),
         );
+        self::assertFalse($container->hasDefinition(TracewickMessengerMiddleware::class));
+    }
+
+    public function testLoadRegistersMessengerMiddlewareWhenProfileMessengerEnabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new TracewickExtension();
+
+        $extension->load([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'profile_messenger' => true,
+        ]], $container);
+
+        self::assertTrue($container->getParameter('tracewick.profile_messenger'));
+        self::assertTrue($container->hasDefinition(TracewickMessengerMiddleware::class));
+        self::assertFalse($container->hasDefinition(TracewickCommandSubscriber::class));
     }
 
     public function testLoadAcceptsDisabledWithoutRequiredFields(): void

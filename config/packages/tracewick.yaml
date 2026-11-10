@@ -23,6 +23,8 @@ tracewick:
     # label_controller: true
     # Opt-in: profile console commands (command name label). Default false — HTTP only.
     # profile_console: true
+    # Opt-in: profile consumed Messenger messages (message FQCN label). Needs symfony/messenger.
+    # profile_messenger: true
     base_labels:
         env: '%kernel.environment%'
         # runtime: fpm   # or rr / frankenphp — set statically per deploy

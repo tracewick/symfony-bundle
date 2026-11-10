@@ -22,6 +22,7 @@ use Tracewick\Runtime\ProfilerConfig;
  *     sink: string,
  *     label_controller: bool,
  *     profile_console: bool,
+ *     profile_messenger: bool,
  *     base_labels: array<string, string>,
  *     pyroscope: array{
  *         server_url: string|null,
@@ -70,6 +71,10 @@ final class Configuration implements ConfigurationInterface
                 ->end()
                 ->booleanNode('profile_console')
                     ->info('When true, profile Symfony console commands with a "command" label (the command name, never argv). Default false — HTTP only unless opted in.')
+                    ->defaultFalse()
+                ->end()
+                ->booleanNode('profile_messenger')
+                    ->info('When true, profile consumed Messenger messages with a "message" label (FQCN, never payload). Default false — HTTP only unless opted in. Requires symfony/messenger.')
                     ->defaultFalse()
                 ->end()
                 ->arrayNode('base_labels')
@@ -206,6 +211,7 @@ final class Configuration implements ConfigurationInterface
             'sink' => \is_string($v['sink'] ?? null) ? $v['sink'] : 'spool',
             'label_controller' => \is_bool($v['label_controller'] ?? null) ? $v['label_controller'] : false,
             'profile_console' => \is_bool($v['profile_console'] ?? null) ? $v['profile_console'] : false,
+            'profile_messenger' => \is_bool($v['profile_messenger'] ?? null) ? $v['profile_messenger'] : false,
             'base_labels' => $baseLabels,
             'pyroscope' => [
                 'server_url' => self::nullableString($pyroscope['server_url'] ?? null),

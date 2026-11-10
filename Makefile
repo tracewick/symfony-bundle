@@ -16,7 +16,7 @@ lint: ## Check composer.json and coding style
 	$(COMPOSER) cs:check
 
 cs-fix: ## Fix coding style and normalize composer.json
-	$(COMPOSER) normalize
+	$(COMPOSER) normalize --no-check-lock --no-update-lock
 	$(COMPOSER) cs:fix
 
 stan: ## Run PHPStan (level max)
