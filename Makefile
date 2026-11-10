@@ -2,7 +2,7 @@
 
 COMPOSER ?= composer
 
-.PHONY: help install lint cs-fix stan rector rector-fix deps test test-unit coverage infection audit ci
+.PHONY: help install lint cs-fix stan rector rector-fix deps test test-unit test-functional coverage infection audit ci
 
 help: ## Show available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-18s %s\n", $$1, $$2}'
@@ -36,6 +36,9 @@ test: ## Run the test suite
 
 test-unit: ## Run unit tests
 	$(COMPOSER) test:unit
+
+test-functional: ## Run FrameworkBundle Kernel / spool functional smoke
+	$(COMPOSER) test:functional
 
 coverage: ## Run tests with coverage
 	$(COMPOSER) test:coverage
