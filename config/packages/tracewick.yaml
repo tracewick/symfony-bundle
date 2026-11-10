@@ -21,8 +21,10 @@ tracewick:
     sink: '%env(TRACEWICK_SINK)%'
     # Optional: also label the resolved controller (default false; route name is always set).
     # label_controller: true
-    # Console commands are profiled by default (command name label). Set false to disable CLI only.
-    # profile_console: false
+    # Opt-in: profile console commands (command name label). Default false — HTTP only.
+    # profile_console: true
+    # Opt-in: profile consumed Messenger messages (message FQCN label). Needs symfony/messenger.
+    # profile_messenger: true
     base_labels:
         env: '%kernel.environment%'
         # runtime: fpm   # or rr / frankenphp — set statically per deploy

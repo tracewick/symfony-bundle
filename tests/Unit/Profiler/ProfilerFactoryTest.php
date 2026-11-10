@@ -161,6 +161,7 @@ final class ProfilerFactoryTest extends TestCase
      *     sink: string,
      *     label_controller: bool,
      *     profile_console: bool,
+     *     profile_messenger: bool,
      *     base_labels: array<string, string>,
      *     pyroscope: array{
      *         server_url: ?string,
@@ -180,6 +181,7 @@ final class ProfilerFactoryTest extends TestCase
          *     sink: string,
          *     label_controller: bool,
          *     profile_console: bool,
+         *     profile_messenger: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -196,7 +198,8 @@ final class ProfilerFactoryTest extends TestCase
             'spool_directory' => sys_get_temp_dir() . '/tracewick-bundle-test-spool',
             'sink' => 'spool',
             'label_controller' => false,
-            'profile_console' => true,
+            'profile_console' => false,
+            'profile_messenger' => false,
             'base_labels' => ['env' => 'test'],
             'pyroscope' => [
                 'server_url' => null,

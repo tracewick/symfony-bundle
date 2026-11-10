@@ -47,17 +47,13 @@
                 "'enabled' => \\\\is_bool\\(\\$v\\['enabled'\\] \\?\\? null\\) \\? \\$v\\['enabled'\\] : false,",
                 // See enabled (label_controller fallback in shape()).
                 "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
-                // See enabled (profile_console fallback in shape(); default true under Processor).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
+                // See enabled (profile_console fallback in shape(); default false under Processor).
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
+                // See enabled (profile_messenger fallback in shape(); default false under Processor).
+                "'profile_messenger' => \\\\is_bool\\(\\$v\\['profile_messenger'\\] \\?\\? null\\) \\? \\$v\\['profile_messenger'\\] : false,",
                 // Equivalent in PHPUnit Processor tests: PHP already casts numeric string keys to int
                 // before the tree sees them; normalizeKeys matters for YAML/XML loaders, not these tests.
                 "->normalizeKeys\\(false\\)",
-            ]
-        },
-        "TrueValue": {
-            "ignoreSourceCodeByRegex": [
-                // See FalseValue (profile_console fallback in shape(); default true under Processor).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
             ]
         },
         "IfNegation": {
@@ -98,6 +94,10 @@
             ]
         },
         "LogicalOr": {
+            "ignore": [
+                // Equivalent: Container ParameterBag keys are always strings; Framework bus lists are arrays.
+                "Tracewick\\Bridge\\Symfony\\DependencyInjection\\Compiler\\AddTracewickMessengerMiddlewarePass::process",
+            ],
             "ignoreSourceCodeByRegex": [
                 // Equivalent under Processor: sample_rate is always float|int from floatNode before shape().
                 "'sample_rate' => \\\\is_float\\(\\$v\\['sample_rate'\\] \\?\\? null\\) \\|\\| \\\\is_int\\(\\$v\\['sample_rate'\\] \\?\\? null\\)",
@@ -128,7 +128,9 @@
                 // See FalseValue (label_controller fallback in shape()).
                 "'label_controller' => \\\\is_bool\\(\\$v\\['label_controller'\\] \\?\\? null\\) \\? \\$v\\['label_controller'\\] : false,",
                 // See FalseValue (profile_console fallback in shape()).
-                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : true,",
+                "'profile_console' => \\\\is_bool\\(\\$v\\['profile_console'\\] \\?\\? null\\) \\? \\$v\\['profile_console'\\] : false,",
+                // See FalseValue (profile_messenger fallback in shape()).
+                "'profile_messenger' => \\\\is_bool\\(\\$v\\['profile_messenger'\\] \\?\\? null\\) \\? \\$v\\['profile_messenger'\\] : false,",
             ]
         },
         "CastFloat": {
