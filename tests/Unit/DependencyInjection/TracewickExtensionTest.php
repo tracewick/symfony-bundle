@@ -38,13 +38,32 @@ final class TracewickExtensionTest extends TestCase
         self::assertSame('blog', $config['application_name']);
         self::assertSame(0.25, $config['sample_rate']);
         self::assertSame('/var/spool/tracewick', $config['spool_directory']);
+        self::assertFalse($config['label_controller']);
         self::assertSame(['env' => 'test'], $config['base_labels']);
+        self::assertFalse($container->getParameter('tracewick.label_controller'));
         self::assertTrue($container->hasDefinition('tracewick.profiler'));
         self::assertTrue($container->hasAlias(HttpProfiler::class));
         self::assertTrue($container->hasDefinition(TracewickRequestSubscriber::class));
         self::assertTrue(
             $container->getDefinition(TracewickRequestSubscriber::class)->hasTag('kernel.event_subscriber'),
         );
+    }
+
+    public function testLoadStoresLabelControllerParameter(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new TracewickExtension();
+
+        $extension->load([[
+            'application_name' => 'blog',
+            'spool_directory' => '/var/spool/tracewick',
+            'label_controller' => true,
+        ]], $container);
+
+        self::assertTrue($container->getParameter('tracewick.label_controller'));
+        /** @var TracewickConfig $config */
+        $config = $container->getParameter('tracewick.config');
+        self::assertTrue($config['label_controller']);
     }
 
     public function testLoadAcceptsDisabledWithoutRequiredFields(): void

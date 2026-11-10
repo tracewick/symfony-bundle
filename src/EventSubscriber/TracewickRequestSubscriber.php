@@ -21,6 +21,7 @@ final readonly class TracewickRequestSubscriber implements EventSubscriberInterf
 {
     public function __construct(
         private HttpProfiler $profiler,
+        private bool $labelController = false,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -54,9 +55,21 @@ final readonly class TracewickRequestSubscriber implements EventSubscriberInterf
     public function labelRoute(RequestEvent $event): void
     {
         try {
-            $route = $event->getRequest()->attributes->get('_route');
-            if ($event->isMainRequest() && \is_string($route)) {
+            if (!$event->isMainRequest()) {
+                return;
+            }
+
+            $request = $event->getRequest();
+            $route = $request->attributes->get('_route');
+            if (\is_string($route)) {
                 $this->profiler->label('route', $route);
+            }
+
+            if ($this->labelController) {
+                $controller = $this->controllerLabel($request->attributes->get('_controller'));
+                if (null !== $controller) {
+                    $this->profiler->label('controller', $controller);
+                }
             }
         } catch (\Throwable) {
             // Fail-open.
@@ -71,5 +84,27 @@ final readonly class TracewickRequestSubscriber implements EventSubscriberInterf
         } catch (\Throwable) {
             // Fail-open.
         }
+    }
+
+    /**
+     * Turns Symfony's `_controller` attribute into a low-cardinality series label, or null to skip.
+     */
+    private function controllerLabel(mixed $controller): ?string
+    {
+        if (\is_string($controller) && '' !== $controller) {
+            return $controller;
+        }
+
+        if (\is_array($controller) && isset($controller[0], $controller[1]) && \is_string($controller[1])) {
+            $class = $controller[0];
+            if (\is_object($class)) {
+                return $class::class . '::' . $controller[1];
+            }
+            if (\is_string($class) && '' !== $class) {
+                return $class . '::' . $controller[1];
+            }
+        }
+
+        return null;
     }
 }

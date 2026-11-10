@@ -28,6 +28,7 @@ final class TracewickExtension extends Extension
          *     sample_rate: float,
          *     spool_directory: ?string,
          *     sink: string,
+         *     label_controller: bool,
          *     base_labels: array<string, string>,
          *     pyroscope: array{
          *         server_url: ?string,
@@ -57,6 +58,7 @@ final class TracewickExtension extends Extension
 
         $container->setParameter('tracewick.config', $config);
         $container->setParameter('tracewick.enabled', $config['enabled']);
+        $container->setParameter('tracewick.label_controller', $config['label_controller']);
 
         if (!$config['enabled']) {
             return;
