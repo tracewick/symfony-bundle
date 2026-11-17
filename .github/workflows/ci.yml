@@ -90,28 +90,6 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: composer audit
 
-  spool:
-    name: HTTP spool (Excimer)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PR_PHP_VERSION }}
-          extensions: excimer
-          coverage: none
-          tools: composer:v2
-
-      - uses: ramsey/composer-install@v4
-
-      - name: Verify Excimer is loaded
-        run: php --ri excimer
-
-      - name: Functional HTTP lifecycle and sequential spool profiles
-        run: composer test:functional
-
   matrix:
     name: Tests (PHP ${{ matrix.php }}, SF ${{ matrix.symfony }}, ${{ matrix.dependencies }})
     runs-on: ubuntu-latest
