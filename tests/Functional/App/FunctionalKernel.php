@@ -66,6 +66,12 @@ final class FunctionalKernel extends Kernel
         return new Response('ok', Response::HTTP_OK, ['Content-Type' => 'text/plain']);
     }
 
+    protected function getContainerClass(): string
+    {
+        // A loaded container class survives kernel shutdown and embeds this test's paths.
+        return parent::getContainerClass() . '_' . hash('sha256', $this->spoolDirectory);
+    }
+
     protected function build(ContainerBuilder $container): void
     {
         if (!$this->recordProfiler) {
@@ -115,5 +121,6 @@ final class FunctionalKernel extends Kernel
     private function configureRoutes(RoutingConfigurator $routes): void
     {
         $routes->add('home', '/')->controller('kernel::home');
+        $routes->add('second', '/second')->controller('kernel::home');
     }
 }

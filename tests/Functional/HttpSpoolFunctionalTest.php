@@ -17,6 +17,7 @@ use Tracewick\Bridge\Symfony\Profiler\HttpProfiler;
 use Tracewick\Bridge\Symfony\Profiler\UnitOfWorkHttpProfiler;
 use Tracewick\Bridge\Symfony\Tests\Functional\App\FunctionalKernel;
 use Tracewick\Bridge\Symfony\Tests\Support\RecordingHttpProfiler;
+use Tracewick\Sink\SpoolFile;
 
 /**
  * Boots a minimal FrameworkBundle kernel and exercises Tracewick HTTP + spool wiring.
@@ -136,22 +137,41 @@ final class HttpSpoolFunctionalTest extends TestCase
     }
 
     #[RequiresPhpExtension('excimer')]
-    public function testEnabledRealProfilerWritesSpoolWhenExcimerIsLoaded(): void
+    public function testSequentialRequestsWriteSeparateProfilesUsingOneProfiler(): void
     {
         $kernel = $this->bootKernel(enabled: true, recordProfiler: false);
+        $container = $this->testContainer($kernel);
+        $profiler = $container->get(HttpProfiler::class);
 
-        $request = Request::create('/');
-        $response = $kernel->handle($request);
+        foreach (['/' => 'home', '/second' => 'second'] as $path => $route) {
+            $previousFiles = $this->spoolEntries();
+            $request = Request::create($path);
+            $response = $kernel->handle($request);
+            self::assertSame(200, $response->getStatusCode());
 
-        // Give the sampler a little wall time so a non-empty stack can land.
-        $until = microtime(true) + 0.05;
-        while (microtime(true) < $until) {
-            hash('xxh128', (string) microtime(true));
+            // Give the real sampler enough wall time to collect a non-empty profile.
+            $until = microtime(true) + 0.05;
+            while (microtime(true) < $until) {
+                hash('xxh128', (string) microtime(true));
+            }
+
+            self::assertSame($previousFiles, $this->spoolEntries(), 'The request profile is delivered at termination.');
+            $kernel->terminate($request, $response);
+
+            self::assertSame($profiler, $container->get(HttpProfiler::class));
+            $newFiles = array_values(array_diff($this->spoolEntries(), $previousFiles));
+            self::assertCount(1, $newFiles, 'Each request must produce its own spool profile.');
+            $bytes = file_get_contents($newFiles[0]);
+            self::assertIsString($bytes);
+            $profile = SpoolFile::fromBytes($bytes);
+            self::assertSame('functional-test', $profile->application);
+            self::assertSame('test', $profile->labels['env'] ?? null);
+            self::assertSame('GET', $profile->labels['method'] ?? null);
+            self::assertSame($route, $profile->labels['route'] ?? null);
+            self::assertNotSame('', $profile->payload);
         }
 
-        $kernel->terminate($request, $response);
-
-        self::assertNotSame([], $this->spoolEntries(), 'Expected at least one spool file when ext-excimer is loaded.');
+        self::assertCount(2, $this->spoolEntries());
     }
 
     private function bootKernel(bool $enabled, bool $recordProfiler): FunctionalKernel
@@ -228,9 +248,19 @@ final class HttpSpoolFunctionalTest extends TestCase
      */
     private function spoolEntries(): array
     {
-        $entries = glob($this->workdir . '/spool/*');
+        $entries = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->workdir . '/spool', \FilesystemIterator::SKIP_DOTS),
+        );
+        /** @var \SplFileInfo $file */
+        foreach ($iterator as $file) {
+            if ($file->isFile() && 'spool' === $file->getExtension()) {
+                $entries[] = $file->getPathname();
+            }
+        }
+        sort($entries);
 
-        return false === $entries ? [] : $entries;
+        return $entries;
     }
 
     private function removeTree(string $path): void
