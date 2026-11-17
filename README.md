@@ -25,21 +25,15 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 
 ## Install
 
-The Flex recipe lives in
-[`symfony/recipes-contrib`](https://github.com/symfony/recipes-contrib)
-(`tracewick/symfony-bundle/0.1`). Enable contrib recipes once per app, then require
-the package:
+Install the package:
 
 ```bash
-composer config extra.symfony.allow-contrib true
 composer require tracewick/symfony-bundle
 ```
 
-Flex registers the bundle, copies a minimal `config/packages/tracewick.yaml`, and
-appends `TRACEWICK_APPLICATION` / `TRACEWICK_SPOOL_DIR` to `.env`.
-
-Without Flex (or before the contrib recipe is merged), enable the bundle and copy
-config by hand:
+The [contrib Flex recipe](https://github.com/symfony/recipes-contrib/pull/2116)
+is pending review. Until it is merged, register the bundle (if not already registered)
+and copy the config by hand:
 
 ```php
 // config/bundles.php
@@ -60,7 +54,7 @@ pie install wikimedia/excimer
 php -m | grep -i excimer
 ```
 
-Minimal config (what the recipe installs):
+Minimal config:
 
 ```yaml
 # config/packages/tracewick.yaml
@@ -68,6 +62,9 @@ tracewick:
     application_name: '%env(TRACEWICK_APPLICATION)%'
     spool_directory: '%env(TRACEWICK_SPOOL_DIR)%'
 ```
+
+Set both variables in the application environment, or in `.env` when the application's
+Symfony Dotenv bootstrap loads it. The full example above provides fallback values.
 
 `enabled` defaults to `true`, `sample_rate` to `0.1`, `sink` to `spool`. Optional
 keys (`label_controller`, `profile_console`, `profile_messenger`, `base_labels`,
@@ -101,6 +98,9 @@ subscriber skips `messenger:consume` / `messenger:consume-messages` so the long-
 command does not share one unit of work with every message.
 
 One shared `UnitOfWorkProfiler` is built per worker process.
+Each request or consumed message starts a separate unit of work on that same profiler;
+the bundle stops and flushes it at the lifecycle boundaries above, including in long-lived
+workers. These calls also publish the core's deferred diagnostics outside sampling callbacks.
 
 **Fail-open (runtime):** listener/middleware boundaries swallow errors; factory construction
 failures (including a broken logger or an unknown `sink` after env resolve) return a no-op
@@ -133,6 +133,17 @@ vendor/bin/tracewick-drain \
   --spool-dir=/var/spool/tracewick \
   --pyroscope-url=http://127.0.0.1:4040
 ```
+
+Bundle configuration is resolved by Symfony's `%env(...)%` mechanism. The standalone
+`tracewick-drain` and Go agent read their own process environment and CLI arguments;
+they do not boot Symfony or load the application's `.env`. Export variables into the
+reader process through your service manager or container configuration. Either reader
+must share the bundle's spool directory or volume, with compatible filesystem permissions;
+run one normal reader per spool.
+
+Reader settings (aggregation, limits, sleep, authentication) belong to that reader,
+not to `tracewick.yaml`. Consult the documentation for your installed core or agent
+version for supported environment variables and CLI precedence.
 
 Put the spool on a **local** volume or tmpfs. Details:
 [core runtime](https://github.com/tracewick/tracewick/blob/main/docs/runtime.md),

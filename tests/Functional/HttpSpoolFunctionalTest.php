@@ -58,7 +58,7 @@ final class HttpSpoolFunctionalTest extends TestCase
         $this->removeTree($this->workdir);
     }
 
-    public function testEnabledRequestLifecycleUsesSubscriberAndSpoolConfig(): void
+    public function testSequentialRequestsUseSharedProfilerAndSpoolConfig(): void
     {
         $kernel = $this->bootKernel(enabled: true, recordProfiler: true);
         $container = $this->testContainer($kernel);
@@ -69,19 +69,24 @@ final class HttpSpoolFunctionalTest extends TestCase
         $profiler = $container->get('tracewick.profiler');
         self::assertInstanceOf(RecordingHttpProfiler::class, $profiler);
 
-        $request = Request::create('/');
-        $response = $kernel->handle($request);
-        self::assertSame(200, $response->getStatusCode());
-        self::assertSame('ok', $response->getContent());
+        $expectedCalls = [];
+        foreach (['/' => 'home', '/second' => 'second'] as $path => $route) {
+            $request = Request::create($path);
+            $response = $kernel->handle($request);
+            self::assertSame(200, $response->getStatusCode());
+            self::assertSame('ok', $response->getContent());
+            self::assertSame($profiler, $container->get('tracewick.profiler'));
 
-        $kernel->terminate($request, $response);
+            $expectedCalls[] = ['start', ['route' => 'unmatched', 'method' => 'GET']];
+            $expectedCalls[] = ['label', 'route', $route];
+            self::assertSame($expectedCalls, $profiler->calls);
 
-        self::assertSame([
-            ['start', ['route' => 'unmatched', 'method' => 'GET']],
-            ['label', 'route', 'home'],
-            ['stop'],
-            ['flush'],
-        ], $profiler->calls);
+            $kernel->terminate($request, $response);
+
+            $expectedCalls[] = ['stop'];
+            $expectedCalls[] = ['flush'];
+            self::assertSame($expectedCalls, $profiler->calls);
+        }
 
         /** @var TracewickConfig $config */
         $config = $container->getParameter('tracewick.config');
