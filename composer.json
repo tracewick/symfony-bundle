@@ -34,7 +34,7 @@
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
         "symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
         "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
-        "tracewick/tracewick": "^0.2"
+        "tracewick/tracewick": "^0.2 || ^1.0"
     },
     "require-dev": {
         "ergebnis/composer-normalize": "^2.48",

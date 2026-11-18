@@ -16,6 +16,7 @@
 /Makefile                          export-ignore
 /SECURITY.md                       export-ignore
 /composer-dependency-analyser.php  export-ignore
+/docs/                            export-ignore
 /phpstan.neon.dist                 export-ignore
 /phpunit.xml.dist                  export-ignore
 /rector.php                        export-ignore
