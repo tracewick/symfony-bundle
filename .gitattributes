@@ -17,10 +17,12 @@
 /SECURITY.md                       export-ignore
 /composer-dependency-analyser.php  export-ignore
 /docs/                            export-ignore
-/infection.json5                  export-ignore
 /phpstan.neon.dist                 export-ignore
 /phpunit.xml.dist                  export-ignore
 /rector.php                        export-ignore
 /release-please-config.json        export-ignore
-/scripts/                         export-ignore
 /tests/                            export-ignore
+
+# Development-only mutation and release tooling.
+/infection.json5                  export-ignore
+/scripts/                         export-ignore
