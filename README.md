@@ -31,7 +31,7 @@ Install the package:
 composer require tracewick/symfony-bundle
 ```
 
-For releases with signed assets, [verify the release or installed Composer dist](docs/verify-release.md).
+For releases with signed assets, [verify the release ZIP and SBOM](docs/verify-release.md).
 Currently published releases are unsigned; Composer does not verify Cosign automatically.
 
 The [contrib Flex recipe](https://github.com/symfony/recipes-contrib/pull/2116)
