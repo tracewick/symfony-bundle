@@ -169,8 +169,12 @@ Without **ext-excimer**, Tracewick is a no-op (warn once, then idle). The app ke
 
 ## Candidate compatibility
 
-The core 1.0 RC installation preflight and its limits are documented in
-[docs/rc-preflight.md](docs/rc-preflight.md). Local candidate labels are not published releases.
+The [installation preflight](docs/rc-preflight.md) passes with published core `1.0.0-rc.1`
+and an archive of this bundle's development branch, without Excimer. It covers clean installation
+and upgrades from the published 0.2.0 pair on Symfony 6.4 / 7.4 / 8.1.
+The bundle's published 0.2.0 still requires core `^0.2`; a compatible bundle RC is not published
+yet. After publication, repeat installation with both actual Packagist RC packages and explicitly
+permit each candidate version in the root application.
 
 ## Development
 

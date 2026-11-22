@@ -1,45 +1,74 @@
-# Core 1.0 installation preflight
+# Core 1.0 RC installation preflight
 
-This is a source preflight, not an announcement that an RC exists on Packagist. Composer path
-repositories assign local package versions without creating tags. Repeat the clean-install and
-upgrade checks against the actual distribution after publication.
+Core **v1.0.0-rc.1 is published on Packagist**. This check installs that distribution with an
+archive of the proposed bundle change in PR #25. The bundle archive uses its real development
+branch version; it is not labelled as an already published bundle RC. After the bundle release,
+repeat the clean-install and upgrade checks with both actual Packagist packages.
 
-## Candidate inputs
+## Recorded inputs
 
-- Core: `37e5928506cee2b1c395c2c8d01e89f2bf43a6b8` (develop after core PR #89).
-- Bundle: `d49c7618bbf3850a3923d26eb8763bd7bfa34a62`, with only its core requirement widened
-  from `^0.2` to `^0.2 || ^1.0`. Runtime sources are unchanged. Use the reviewed bundle commit
-  containing this change when repeating the check.
-- Both local packages are labelled `1.0.0-rc.1` for dependency-resolution testing only.
-- Published upgrade baseline: core `v0.2.0` (`30ddf9685a0a65066c38b250466350fc19431041`) and
-  bundle `v0.2.0` (`3bcb7988fcd9c1673eed1d7afabc8fe056c9c1d0`).
+- Core: Packagist `v1.0.0-rc.1`, source `110a65061c2ee61c4f44e09767cd7ee2e53b2a76`.
+  There is no local core repository, version override, alias or platform bypass.
+- Bundle archive: `882df76ab232bcb6e6dbdb87b8e8a66c8d16ca18`, PR #25 after merging current
+  develop (`7928d3e`). Package version: `dev-feature/rc-installation-preflight`.
+  Its unmodified Composer metadata requires core `^0.2 || ^1.0`; runtime/config sources
+  are unchanged. Subsequent report-only edits do not change these tested inputs.
+- Bundle ZIP SHA-256: `1999c42354e53ca0284976bf0adb5ca569ffde8d1e912aad46df891b9574f1c1`.
+- Published upgrade baseline: core `v0.2.0` (`30ddf9685a0a65066c38b250466350fc19431041`)
+  and bundle `v0.2.0` (`3bcb7988fcd9c1673eed1d7afabc8fe056c9c1d0`).
+
+The 18 November check used local core sources before publication. The check below supersedes
+that evidence for core installation; it does not announce a bundle release or a final release SHA.
 
 ## Reproduce
 
-Use a disposable directory containing `core/`, `bundle/` and the test application. Export pinned
-source snapshots with `git archive <commit>`, rather than copying vendor directories. Keep the
-bundle's proposed requirement intact; do not label the new core as a 0.2 version.
+Use PHP without Excimer and verify `extension_loaded('excimer') === false`. Record PHP and
+Composer versions. Keep normal platform checks, security checks, `minimum-stability: stable`
+and `prefer-stable: true`; explicit root requirements admit only the selected development/RC packages.
 
-Run PHP with Excimer disabled, verify `extension_loaded('excimer') === false`, and record
-`php --version` and `composer --version`. Keep normal Composer platform and security checks enabled.
-The local path snapshots must remain available until the test is complete.
-
-Create a real Symfony application, repeating with `6.4.*`, `7.4.*` and `8.1.*`:
+From the bundle checkout, export the reviewed commit to a disposable directory. The recorded
+commit above is reproducible from this PR's history; use the commit under review for a new run:
 
 ```bash
-composer create-project 'symfony/skeleton:6.4.*' app --no-interaction
-cd app
+BUNDLE_REF=882df76ab232bcb6e6dbdb87b8e8a66c8d16ca18
+WORK_DIR=$(mktemp -d)
+git archive --format=zip "$BUNDLE_REF" -o "$WORK_DIR/bundle-candidate.zip"
+python3 - "$WORK_DIR/bundle-candidate.zip" "$BUNDLE_REF" > "$WORK_DIR/bundle-package.json" <<'PY'
+import hashlib, json, pathlib, sys, zipfile
+archive = pathlib.Path(sys.argv[1]).resolve()
+with zipfile.ZipFile(archive) as stream:
+    package = json.loads(stream.read('composer.json'))
+package['version'] = 'dev-feature/rc-installation-preflight'
+package['source'] = {'type': 'git', 'url': 'https://github.com/tracewick/symfony-bundle.git',
+                     'reference': sys.argv[2]}
+package['dist'] = {'type': 'zip', 'url': archive.as_uri(), 'reference': sys.argv[2],
+                   'shasum': hashlib.sha1(archive.read_bytes()).hexdigest()}
+print(json.dumps(package, indent=2))
+PY
 ```
 
-For the upgrade case, first install the published baseline:
+This describes the actual exported bundle metadata and files. It creates no tag and supplies
+no replacement for the core package. Keep the archive until installation checks finish.
+
+Create separate Symfony skeletons for clean installation and upgrade, repeating with
+`6.4.*`, `7.4.*` and `8.1.*`:
 
 ```bash
+cd "$WORK_DIR"
+composer create-project 'symfony/skeleton:6.4.*' clean-6.4 --no-interaction
+composer create-project 'symfony/skeleton:6.4.*' upgrade-6.4 --no-interaction
+```
+
+For the upgrade fixture, first install the real published baseline before adding the candidate
+repository. Keep this vendor directory and lock for the targeted update:
+
+```bash
+cd "$WORK_DIR/upgrade-6.4"
 composer require tracewick/symfony-bundle:0.2.0 tracewick/tracewick:0.2.0 --no-interaction
 ```
 
 Register `Tracewick\Bridge\Symfony\TracewickBundle` in `config/bundles.php` for all environments.
-Add the following application configuration and load the variables through the skeleton's Dotenv
-bootstrap. Keep the application configuration through the upgrade:
+Configure the application in both fixtures and retain these files across the upgrade:
 
 ```yaml
 # config/packages/tracewick.yaml
@@ -54,115 +83,111 @@ TRACEWICK_APPLICATION=preflight-app
 TRACEWICK_SPOOL_DIR=var/spool/tracewick
 ```
 
-This deliberately keeps the default spool sink and sample rate 0.1, while opting into console
-profiling. Warm the container and exercise the application before upgrading. Save the baseline
-lock and hashes of `.env`, `config/` and `src/`.
+Load these variables through the skeleton's normal Dotenv bootstrap. The default spool sink,
+sample rate 0.1 and route-name labels remain in effect; only console profiling is opted in.
+Warm and exercise the baseline upgrade fixture, then save hashes of `.env`, `config/` and `src/`.
+For the clean fixture, remove only its initial skeleton vendor directory and lock before
+candidate resolution, and save the same application hashes.
 
-In the disposable application's `composer.json`, configure these repositories (paths are relative
-to the application):
-
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../core",
-            "options": {
-                "symlink": false,
-                "reference": "config",
-                "versions": {"tracewick/tracewick": "1.0.0-rc.1"}
-            }
-        },
-        {
-            "type": "path",
-            "url": "../bundle",
-            "options": {
-                "symlink": false,
-                "reference": "config",
-                "versions": {"tracewick/symfony-bundle": "1.0.0-rc.1"}
-            }
-        }
-    ]
-}
-```
-
-These entries belong to the application, not to the distributed bundle. Require both exact
-candidate versions in the application; their explicit prerelease versions grant the root-level
-stability approval. Leave `minimum-stability: stable` and `prefer-stable: true` intact:
+In each fixture's `composer.json`, add only the bundle artifact repository. When the fixtures
+are direct children of the disposable directory, run this from the fixture root:
 
 ```bash
-composer require tracewick/symfony-bundle:1.0.0-rc.1 tracewick/tracewick:1.0.0-rc.1 --no-update
-composer update tracewick/symfony-bundle tracewick/tracewick --with-all-dependencies --no-interaction
+python3 - <<'PY'
+import json, pathlib
+path = pathlib.Path('composer.json')
+root = json.loads(path.read_text())
+package = json.loads(pathlib.Path('../bundle-package.json').read_text())
+root['repositories'] = [{'type': 'package', 'package': package}]
+root['require']['tracewick/symfony-bundle'] = 'dev-feature/rc-installation-preflight'
+root['require']['tracewick/tracewick'] = '1.0.0-rc.1'
+path.write_text(json.dumps(root, indent=4) + '\n')
+PY
 ```
 
-For a clean candidate installation, use a separate fresh skeleton with no Tracewick baseline.
-Configure the repositories and exact requirements before installing the candidate packages.
-In the recorded clean runs the application had no vendor directory or lock when `composer install`
-resolved and installed its dependencies. In upgrade runs both were retained and the targeted
-update above was used. Inspect the resulting lock: both Tracewick entries must be `1.0.0-rc.1`
-with path distributions, not a silently retained published 0.2 package.
-
-Run the normal application commands in production mode:
+For clean installation run `composer install --prefer-dist --no-interaction` with no vendor/lock.
+For upgrade run:
 
 ```bash
-APP_ENV=prod APP_DEBUG=0 php bin/console cache:clear
-APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup
-APP_ENV=prod APP_DEBUG=0 php bin/console lint:container
-APP_ENV=prod APP_DEBUG=0 php bin/console tracewick:stats
+composer update tracewick/symfony-bundle tracewick/tracewick --with-all-dependencies --prefer-dist --no-interaction
+```
+
+Normal Composer post-install/update scripts must succeed. Inspect the resulting lock:
+core must be `v1.0.0-rc.1` with its published source reference and GitHub ZIP distribution;
+bundle must be the selected development version with the archive's source reference and checksum.
+Compare installed bundle files to the archive, not merely the declared version strings.
+
+Run the normal application commands:
+
+```bash
+export APP_ENV=prod APP_DEBUG=0
+php bin/console cache:clear
+php bin/console cache:warmup
+php bin/console lint:container
+php bin/console tracewick:stats
 composer check-platform-reqs
 composer audit
 ```
 
-For HTTP, add two named routes with different paths and a controller returning a fixed 200 response.
-Boot one `App\Kernel('prod', false)`, handle and terminate both requests on that kernel, and check
-status and body. Expose a public application alias for `Profiler\HttpProfiler` to `tracewick.profiler`
-for this probe. Verify that both requests use the same `UnitOfWorkHttpProfiler`, that resolved
-configuration still has `sink=spool` and `sample_rate=0.1`, and that diagnostics report
-`NullSamplerReason::ExtensionMissing`, zero swallowed errors and zero sampler failures. This checks
-that fail-open behavior has not hidden a factory fallback to `NullHttpProfiler`.
+For HTTP, add two named routes and a controller returning a fixed 200 response. Expose a public
+application alias from `Profiler\HttpProfiler` to `tracewick.profiler`. Boot one production kernel,
+handle and terminate both requests, and verify the same `UnitOfWorkHttpProfiler` is reused.
+Check spool/sample defaults, `NullSamplerReason::ExtensionMissing`, zero swallowed errors and
+zero sampler failures. This catches a factory silently falling back to `NullHttpProfiler`.
+Compare application-file hashes after installation/update.
 
-Compare the saved application-file hashes after update. Run the bundle's existing unit/functional
-suite against the candidate core source, still without Excimer; its recording-profiler tests check
-lifecycle call order and route labels. Missing-extension tests establish installation and bridge
-behavior, not sample collection or delivery accuracy.
+Also run the existing bundle suite against the published core RC, without Excimer:
 
-Negative control: use the unchanged bundle requirement `^0.2` with the core path package labelled
-`1.0.0-rc.1`; Composer must reject the pair. No aliases, platform ignores or lowered stability floor
-are needed to make the corrected pair work.
+```bash
+composer update 'tracewick/tracewick:1.0.0-rc.1' --with-all-dependencies
+composer ci
+composer test:coverage
+```
 
-## Recorded evidence, 2026-11-18
+The temporary update constraint selects the RC without changing the bundle's public requirement.
+The normal dependency resolution and CI matrix retain coverage of the supported 0.2 line.
 
-Runtime: Linux, PHP 8.5.12, Composer 2.11.2, Excimer explicitly disabled. Each row has a separate
-clean installation and a baseline-to-candidate upgrade, using real Symfony skeletons and normal
-Composer scripts. This is not a full PHP/Symfony cross-product certification.
+Negative control: in a separate application require the published bundle `0.2.0` and core
+`1.0.0-rc.1` with no candidate repository. Composer must reject the pair because that bundle
+requires core `^0.2`. Do not use aliases to disguise the RC as 0.2.
 
-| FrameworkBundle | Clean candidate | Upgrade from published 0.2.0 pair | Application config |
+## Recorded evidence, 2026-11-23
+
+Linux, PHP 8.5.12, Composer 2.11.2; Excimer explicitly disabled. All six fixtures use actual
+Symfony skeletons and normal Composer scripts. This is not the full PHP/Symfony cross-product.
+
+| FrameworkBundle | Clean installation | Upgrade from published 0.2.0 pair | Application config/source |
 | --- | --- | --- | --- |
 | 6.4.49 | Pass | Pass | Unchanged |
 | 7.4.23 | Pass | Pass | Unchanged |
 | 8.1.11 | Pass | Pass | Unchanged |
 
-All six candidate smoke runs pass: production cache clear/warmup, container lint, stats command,
-two sequential HTTP requests, real core-profiler construction and missing-extension diagnostics.
-Application `.env`, config and source hashes match before/after candidate installation or update.
-The unchanged `^0.2` requirement is rejected as expected. The existing bundle suite against the
-candidate core passes: 83 tests, 239 assertions, one existing optional Excimer skip.
-Local style, Rector, PHPStan, dependency analysis, the ordinary 83-test suite and PCOV also pass.
-The separate local `composer audit` is blocked by a proxy HTTP 403 at the Packagist security
-advisories endpoint; no audit settings were weakened.
+All production cache clear/warmup, container lint, stats, platform checks and sequential HTTP
+probes pass. Installed core source is the published `110a650`; installed bundle files match
+the exported archive. There are no local core repositories or version aliases. The published
+0.2.0 bundle/core RC negative control is rejected as expected.
+
+The ordinary suite with core 0.2 and the suite with the published core RC each pass:
+83 tests, 239 assertions, one existing optional Excimer skip. Local style, Rector, PHPStan,
+dependency analysis and PCOV pass; covered executable statements are 329/331 (99.40%).
+Infection against the published core RC kills all 245 non-ignored mutants (25 existing ignores),
+MSI 100%; thresholds and ignores are unchanged. Missing-extension tests verify bridge behaviour,
+not native sampling or profile-delivery accuracy.
+
+Standalone local security-advisory lookup is blocked by the environment proxy's HTTP 403;
+no audit settings were weakened. Hosted CI audits remain required. After the bundle RC is
+published, repeat package installation with both real Packagist distributions and verify its
+actual signed release assets separately.
 
 ## Flex recipe
 
-[Recipe PR #2116](https://github.com/symfony/recipes-contrib/pull/2116), head
-`dd4f839742ee85983f24e2f1ed918c9157fe0c90`, is still open. Its QA on 2026-11-10 fails inside the
-checker dependency `Symfony/HttpClient/Internal/CurlClientState.php` at
-`curl_multi_setopt(CURLMOPT_PUSHFUNCTION)`; the updated-recipe installation job is skipped.
-[Failed job](https://github.com/symfony/recipes-contrib/actions/runs/42827960917/job/129870137317).
-The checker crash occurs before a usable installation result; it neither establishes a recipe
-configuration defect nor proves that the recipe installs successfully.
+[Recipe PR #2116](https://github.com/symfony/recipes-contrib/pull/2116) remains open and unmerged.
+Its recorded QA fails inside the checker dependency Symfony HttpClient at
+`curl_multi_setopt(CURLMOPT_PUSHFUNCTION)`; updated-recipe installation is skipped
+([job](https://github.com/symfony/recipes-contrib/actions/runs/42827960917/job/129870137317)).
+The maintainer confirmed a repository-wide upstream CI problem; this is a separate external wait.
 
-The application probes above register the bundle and apply the minimal config/env values manually,
-with the same values as the proposed recipe and an additional application console opt-in. They do
-not claim that Flex installed the pending recipe. A successful upstream recipe run, automatic
-recipe installation/update and installation from real Packagist RC tags remain separate checks.
-No upstream rerun, review comment or recipe changes were made during this preflight.
+The fixtures register the bundle and apply equivalent minimal config/env values manually.
+They do not claim that Flex installed the pending recipe. No upstream rerun, message or recipe
+change is needed for this preflight. Automatic recipe installation remains unverified until
+upstream review/CI/merge completes.
