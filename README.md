@@ -18,7 +18,7 @@ Official Symfony integration for
 |---|---|
 | PHP | 8.2–8.5 |
 | Symfony | 6.4 / 7.x / 8.x (CI matrix: **6.4**, **7.4**, **8.1**) |
-| Tracewick | `^0.2` |
+| Tracewick | `^0.2 || ^1.0` (1.0 candidates require explicit Composer stability approval) |
 | ext-excimer | suggested (fail-open no-op without it) |
 
 Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
@@ -166,6 +166,15 @@ Core kill switches still apply when the bundle is enabled. See
 [`docs/runtime.md`](https://github.com/tracewick/tracewick/blob/main/docs/runtime.md).
 
 Without **ext-excimer**, Tracewick is a no-op (warn once, then idle). The app keeps serving.
+
+## Candidate compatibility
+
+The [installation preflight](docs/rc-preflight.md) passes with published core `1.0.0-rc.1`
+and an archive of this bundle's development branch, without Excimer. It covers clean installation
+and upgrades from the published 0.2.0 pair on Symfony 6.4 / 7.4 / 8.1.
+The bundle's published 0.2.0 still requires core `^0.2`; a compatible bundle RC is not published
+yet. After publication, repeat installation with both actual Packagist RC packages and explicitly
+permit each candidate version in the root application.
 
 ## Development
 

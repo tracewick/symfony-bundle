@@ -40,7 +40,13 @@ Coverage and Infection need [pcov](https://github.com/krakjoe/pcov) or Xdebug. I
 |-----------|----------|
 | PHP | 8.2–8.5 |
 | Symfony | 6.4, 7.x, 8.x (CI matrix: 6.4 / 7.4 / 8.1) |
-| Tracewick | `^0.2` |
+| Tracewick | `^0.2 || ^1.0` |
+
+Before releasing a core/bundle RC pair, repeat the [installation preflight](docs/rc-preflight.md).
+The current check uses published core `1.0.0-rc.1` and a ZIP of the reviewed bundle branch.
+The root application explicitly permits the core RC and bundle development version, while
+keeping its global stability floor unchanged. Repeat with both actual Packagist RC packages
+after the bundle is published; local archive metadata is not a release announcement.
 
 Symfony 6.4 on PHP 8.1 is **not** supported: this package requires PHP ≥ 8.2 like the core.
 
