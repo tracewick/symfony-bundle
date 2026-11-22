@@ -9,3 +9,5 @@
 /.cursor/
 /phpstan.neon
 /phpunit.xml
+
+__pycache__/

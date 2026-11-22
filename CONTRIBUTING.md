@@ -40,7 +40,13 @@ Coverage and Infection need [pcov](https://github.com/krakjoe/pcov) or Xdebug. I
 |-----------|----------|
 | PHP | 8.2–8.5 |
 | Symfony | 6.4, 7.x, 8.x (CI matrix: 6.4 / 7.4 / 8.1) |
-| Tracewick | `^0.2` |
+| Tracewick | `^0.2 || ^1.0` |
+
+Before releasing a core/bundle RC pair, repeat the [installation preflight](docs/rc-preflight.md).
+The current check uses published core `1.0.0-rc.1` and a ZIP of the reviewed bundle branch.
+The root application explicitly permits the core RC and bundle development version, while
+keeping its global stability floor unchanged. Repeat with both actual Packagist RC packages
+after the bundle is published; local archive metadata is not a release announcement.
 
 Symfony 6.4 on PHP 8.1 is **not** supported: this package requires PHP ≥ 8.2 like the core.
 
@@ -75,9 +81,43 @@ Releases follow git flow and are automated with
 4. The workflow opens a pull request merging `main` back into `develop`. Merge it with a merge
    commit.
 
+The signed-asset job builds a package ZIP and package SBOM from the exact tag,
+signs their checksums with keyless Cosign, and verifies the downloaded assets
+with standard Cosign/SHA-256 tools. Normal Composer/Packagist installation
+is unchanged and does not verify Cosign automatically. Existing releases remain
+unsigned; first publication through this job must confirm the signing path.
+See [verification, SBOM scope and recovery](docs/verify-release.md).
+
 Before 1.0.0, `feat` bumps the minor version and `fix` the patch version. A breaking change
 (`feat!:` or a `BREAKING CHANGE:` footer) bumps the minor version until 1.0.0 and the major
 version after it.
+
+### Release candidates
+
+The 1.0 candidate series sets `versioning: prerelease`, `prerelease-type: rc` and
+`prerelease: true` in `release-please-config.json`. Select the first candidate with a footer
+on a parseable Conventional Commit in the release branch:
+
+```text
+chore: prepare 1.0.0-rc.1
+
+Release-As: 1.0.0-rc.1
+```
+
+Follow the two-PR procedure above: the maintainer merges the preparation branch with a merge
+commit, then reviews and merges `chore: release 1.0.0-rc.1`. The bot creates
+`v1.0.0-rc.1` and marks the GitHub Release as a prerelease. Do not edit the generated manifest
+or changelog or create tags manually. GitHub's default `Merge pull request #N` subject does not
+parse a Release-As footer.
+
+Keep prerelease mode for later candidates and update the installation examples to the actual
+tested versions of both packages; matching version numbers are not a wire-compatibility rule.
+For final 1.0.0, switch `versioning` to `default`, set `prerelease: false`, remove
+`prerelease-type` and use `Release-As: 1.0.0` on a Conventional Commit. Review the generated
+version and prerelease status before merging. Development aliases follow `1.0.x-dev`.
+
+After publication, repeat clean installation and upgrade with both real Packagist distributions
+and verify the actual signed bundle assets before closing the release-verification issue.
 
 ### Release automation setup (maintainers)
 
