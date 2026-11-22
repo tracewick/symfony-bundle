@@ -4,8 +4,9 @@
 [![Coverage](https://codecov.io/gh/tracewick/symfony-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/tracewick/symfony-bundle)
 
 > [!WARNING]
-> Tracewick Symfony Bundle **0.x is alpha**. The public API is not stable until 1.0.0 — expect
-> breaking changes in minor releases. Pin a version and read the changelog before upgrading.
+> Tracewick Symfony Bundle **1.0.0-rc.1 is a release candidate**, not final 1.0. Compatibility
+> fixes may still be needed during RC validation. Pin candidate versions explicitly and read
+> the changelog before upgrading from 0.2.
 
 Official Symfony integration for
 [`tracewick/tracewick`](https://github.com/tracewick/tracewick) — a PHP sampling profiler on
@@ -25,14 +26,15 @@ Symfony 6.4 on PHP 8.1 is not supported (same PHP floor as the core library).
 
 ## Install
 
-Install the package:
+Install the candidate pair after publication. Explicit versions permit these prereleases while
+the application's global stability floor remains unchanged:
 
 ```bash
-composer require tracewick/symfony-bundle
+composer require 'tracewick/symfony-bundle:1.0.0-rc.1' 'tracewick/tracewick:1.0.0-rc.1'
 ```
 
 For releases with signed assets, [verify the release ZIP and SBOM](docs/verify-release.md).
-Currently published releases are unsigned; Composer does not verify Cosign automatically.
+The older 0.1.0 and 0.2.0 releases are unsigned; Composer does not verify Cosign automatically.
 
 The [contrib Flex recipe](https://github.com/symfony/recipes-contrib/pull/2116)
 is pending review. Until it is merged, register the bundle (if not already registered)
@@ -172,9 +174,9 @@ Without **ext-excimer**, Tracewick is a no-op (warn once, then idle). The app ke
 The [installation preflight](docs/rc-preflight.md) passes with published core `1.0.0-rc.1`
 and an archive of this bundle's development branch, without Excimer. It covers clean installation
 and upgrades from the published 0.2.0 pair on Symfony 6.4 / 7.4 / 8.1.
-The bundle's published 0.2.0 still requires core `^0.2`; a compatible bundle RC is not published
-yet. After publication, repeat installation with both actual Packagist RC packages and explicitly
-permit each candidate version in the root application.
+The older bundle 0.2.0 requires core `^0.2`; this candidate supports `^0.2 || ^1.0`.
+After publication, repeat installation with both actual Packagist RC packages using the explicit
+requirements above. Archive preflight does not verify a future published release or its signatures.
 
 ## Development
 

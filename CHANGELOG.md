@@ -9,6 +9,18 @@ Entries under a release heading are written by
 [release-please](https://github.com/googleapis/release-please) when a release is cut; do not edit
 them in a feature branch.
 
+## [1.0.0-rc.1](https://github.com/tracewick/symfony-bundle/compare/v0.2.0...v1.0.0-rc.1) (2026-11-22)
+
+
+### Added
+
+* support core 1.0 with published RC installation checks ([#25](https://github.com/tracewick/symfony-bundle/issues/25)) ([5c4217f](https://github.com/tracewick/symfony-bundle/commit/5c4217faf10072cedfd6cfd0d8dcc2b4deb3da45))
+
+
+### Chores
+
+* prepare 1.0.0-rc.1 ([b538c65](https://github.com/tracewick/symfony-bundle/commit/b538c657ceb294b0801fe021a46d88418e9022b2))
+
 ## [0.2.0](https://github.com/tracewick/symfony-bundle/compare/v0.1.0...v0.2.0) (2026-11-10)
 
 
