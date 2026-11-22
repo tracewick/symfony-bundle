@@ -179,6 +179,16 @@ no audit settings were weakened. Hosted CI audits remain required. After the bun
 published, repeat package installation with both real Packagist distributions and verify its
 actual signed release assets separately.
 
+## After bundle publication
+
+Repeat all six scenarios with exact `tracewick/symfony-bundle:1.0.0-rc.1` and
+`tracewick/tracewick:1.0.0-rc.1` requirements from Packagist. Use fresh clean fixtures and retain
+the published 0.2.0 pair for upgrade fixtures. Remove the local bundle package repository;
+it must not shadow the published package. Check both lock entries' actual tagged source refs
+and ZIP distributions, application-file hashes, normal scripts and the same production probes.
+Verify the real bundle release ZIP/SBOM and checksum signature using [the release guide](verify-release.md).
+Do not mark these checks passed merely because the tag or release metadata exists.
+
 ## Flex recipe
 
 [Recipe PR #2116](https://github.com/symfony/recipes-contrib/pull/2116) remains open and unmerged.

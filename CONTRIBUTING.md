@@ -92,6 +92,33 @@ Before 1.0.0, `feat` bumps the minor version and `fix` the patch version. A brea
 (`feat!:` or a `BREAKING CHANGE:` footer) bumps the minor version until 1.0.0 and the major
 version after it.
 
+### Release candidates
+
+The 1.0 candidate series sets `versioning: prerelease`, `prerelease-type: rc` and
+`prerelease: true` in `release-please-config.json`. Select the first candidate with a footer
+on a parseable Conventional Commit in the release branch:
+
+```text
+chore: prepare 1.0.0-rc.1
+
+Release-As: 1.0.0-rc.1
+```
+
+Follow the two-PR procedure above: the maintainer merges the preparation branch with a merge
+commit, then reviews and merges `chore: release 1.0.0-rc.1`. The bot creates
+`v1.0.0-rc.1` and marks the GitHub Release as a prerelease. Do not edit the generated manifest
+or changelog or create tags manually. GitHub's default `Merge pull request #N` subject does not
+parse a Release-As footer.
+
+Keep prerelease mode for later candidates and update the installation examples to the actual
+tested versions of both packages; matching version numbers are not a wire-compatibility rule.
+For final 1.0.0, switch `versioning` to `default`, set `prerelease: false`, remove
+`prerelease-type` and use `Release-As: 1.0.0` on a Conventional Commit. Review the generated
+version and prerelease status before merging. Development aliases follow `1.0.x-dev`.
+
+After publication, repeat clean installation and upgrade with both real Packagist distributions
+and verify the actual signed bundle assets before closing the release-verification issue.
+
 ### Release automation setup (maintainers)
 
 Tags `v*` are protected by a ruleset, so the workflow acts as the `tracewick-release` GitHub App
