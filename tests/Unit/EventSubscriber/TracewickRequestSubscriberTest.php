@@ -152,7 +152,10 @@ final class TracewickRequestSubscriberTest extends TestCase
             });
 
         $controller = new class {
-            public function index(): void {}
+            public function index(): string
+            {
+                return 'ok';
+            }
         };
 
         // Build the callable as Symfony stores object controllers; keep it an array

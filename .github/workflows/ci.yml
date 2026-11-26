@@ -72,9 +72,7 @@ jobs:
         with:
           php-version: ${{ env.PR_PHP_VERSION }}
           coverage: pcov
-          # Infection is a PHAR, not a dev dependency: recent versions need PHP 8.3+ and would
-          # block installing dependencies on PHP 8.2 in the matrix.
-          tools: composer:v2, infection:${{ env.INFECTION_VERSION }}
+          tools: composer:v2
 
       - name: Validate composer.json
         run: composer validate --strict
@@ -116,19 +114,35 @@ jobs:
           # Coverage gates are enforced by Codecov's status checks, not by this upload.
           fail_ci_if_error: false
 
-      - name: Mutation testing
-        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
-        run: |
-          # Safety net if coverage is empty (misconfigured run). Normal builds have executable src/.
-          if tail -n 3 build/coverage/clover.xml | grep -q ' statements="0"'; then
-            echo '::notice::Coverage reports zero statements; skipping mutation testing.'
-            exit 0
-          fi
-          composer infection:ci
-
       - name: Security audit
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: composer audit
+
+  mutation:
+    name: Mutation testing (Infection)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PR_PHP_VERSION }}
+          extensions: ':excimer'
+          coverage: pcov
+          tools: composer:v2, infection:${{ env.INFECTION_VERSION }}
+      - uses: ramsey/composer-install@v4
+      - run: composer test:coverage
+      - name: Verify coverage input
+        run: |
+          php <<'PHP'
+          <?php
+          $coverage = simplexml_load_file('build/coverage/clover.xml');
+          if ($coverage === false || (int) $coverage->project->metrics['coveredstatements'] === 0) {
+              fwrite(STDERR, "Expected nonempty source coverage.\n");
+              exit(1);
+          }
+          PHP
+      - run: composer infection:ci
 
   matrix:
     name: Tests (PHP ${{ matrix.php }}, SF ${{ matrix.symfony }}, ${{ matrix.dependencies }})

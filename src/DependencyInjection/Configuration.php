@@ -128,7 +128,7 @@ final class Configuration implements ConfigurationInterface
      */
     private static function requiresApplicationName(array $v): bool
     {
-        $config = self::shape($v);
+        $config = self::validationValues($v);
 
         return $config['enabled'] && self::isBlank($config['application_name']);
     }
@@ -138,7 +138,7 @@ final class Configuration implements ConfigurationInterface
      */
     private static function requiresSpoolDirectory(array $v): bool
     {
-        $config = self::shape($v);
+        $config = self::validationValues($v);
         if (!$config['enabled'] || self::isPlaceholder($config['sink'])) {
             return false;
         }
@@ -151,7 +151,7 @@ final class Configuration implements ConfigurationInterface
      */
     private static function requiresPyroscopeServerUrl(array $v): bool
     {
-        $config = self::shape($v);
+        $config = self::validationValues($v);
         if (!$config['enabled'] || self::isPlaceholder($config['sink'])) {
             return false;
         }
@@ -164,7 +164,7 @@ final class Configuration implements ConfigurationInterface
      */
     private static function hasInvalidSink(array $v): bool
     {
-        $config = self::shape($v);
+        $config = self::validationValues($v);
         if (self::isPlaceholder($config['sink'])) {
             return false;
         }
@@ -177,7 +177,7 @@ final class Configuration implements ConfigurationInterface
      */
     private static function hasPartialBasicAuth(array $v): bool
     {
-        $config = self::shape($v);
+        $config = self::validationValues($v);
         $user = $config['pyroscope']['basic_auth_user'];
         $password = $config['pyroscope']['basic_auth_password'];
 
@@ -187,37 +187,27 @@ final class Configuration implements ConfigurationInterface
     /**
      * @param array<mixed> $v
      *
-     * @return TracewickConfig
+     * @return array{
+     *     enabled: bool,
+     *     application_name: ?string,
+     *     spool_directory: ?string,
+     *     sink: string,
+     *     pyroscope: array{server_url: ?string, basic_auth_user: ?string, basic_auth_password: ?string}
+     * }
      */
-    private static function shape(array $v): array
+    private static function validationValues(array $v): array
     {
         $pyroscope = \is_array($v['pyroscope'] ?? null) ? $v['pyroscope'] : [];
-        $baseLabels = [];
-        if (\is_array($v['base_labels'] ?? null)) {
-            foreach ($v['base_labels'] as $key => $value) {
-                if (\is_string($key) && \is_string($value)) {
-                    $baseLabels[$key] = $value;
-                }
-            }
-        }
 
         return [
-            'enabled' => \is_bool($v['enabled'] ?? null) ? $v['enabled'] : false,
+            'enabled' => ($v['enabled'] ?? null) === true,
             'application_name' => self::nullableString($v['application_name'] ?? null),
-            'sample_rate' => \is_float($v['sample_rate'] ?? null) || \is_int($v['sample_rate'] ?? null)
-                ? (float) $v['sample_rate']
-                : ProfilerConfig::DEFAULT_SAMPLE_RATE,
             'spool_directory' => self::nullableString($v['spool_directory'] ?? null),
             'sink' => \is_string($v['sink'] ?? null) ? $v['sink'] : 'spool',
-            'label_controller' => \is_bool($v['label_controller'] ?? null) ? $v['label_controller'] : false,
-            'profile_console' => \is_bool($v['profile_console'] ?? null) ? $v['profile_console'] : false,
-            'profile_messenger' => \is_bool($v['profile_messenger'] ?? null) ? $v['profile_messenger'] : false,
-            'base_labels' => $baseLabels,
             'pyroscope' => [
                 'server_url' => self::nullableString($pyroscope['server_url'] ?? null),
                 'basic_auth_user' => self::nullableString($pyroscope['basic_auth_user'] ?? null),
                 'basic_auth_password' => self::nullableString($pyroscope['basic_auth_password'] ?? null),
-                'tenant' => self::nullableString($pyroscope['tenant'] ?? null),
             ],
         ];
     }
