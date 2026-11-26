@@ -139,6 +139,26 @@ final class AddTracewickMessengerMiddlewarePassTest extends TestCase
         ], $container->getParameter('messenger.bus.b.middleware'));
     }
 
+    public function testSkipsMissingAndUnresolvedParametersWithoutBlockingTheNextBus(): void
+    {
+        $container = new ContainerBuilder();
+        $this->registerTracewickMiddleware($container);
+        foreach (['messenger.bus.missing', 'messenger.bus.unresolved', 'messenger.bus.ready'] as $id) {
+            $container->register($id, MessageBus::class)->addTag('messenger.bus');
+        }
+        $container->setParameter('messenger.bus.unresolved.middleware', '%app.middleware%');
+        $container->setParameter('messenger.bus.ready.middleware', [['id' => 'send_message', 'arguments' => [true]]]);
+
+        (new AddTracewickMessengerMiddlewarePass())->process($container);
+
+        self::assertFalse($container->hasParameter('messenger.bus.missing.middleware'));
+        self::assertSame('%app.middleware%', $container->getParameter('messenger.bus.unresolved.middleware'));
+        self::assertSame([
+            ['id' => TracewickMessengerMiddleware::class],
+            ['id' => 'send_message', 'arguments' => [true]],
+        ], $container->getParameter('messenger.bus.ready.middleware'));
+    }
+
     public function testContinuesAfterAlreadyRegisteredBusInsteadOfBreaking(): void
     {
         $container = new ContainerBuilder();

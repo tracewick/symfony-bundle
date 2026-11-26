@@ -81,6 +81,16 @@ final class ConfigurationTest extends TestCase
         self::assertSame(['env' => 'prod', 'runtime' => 'fpm'], $config['base_labels']);
     }
 
+    public function testConfigProcessorPreservesBaseLabelKeysForRuntimeValidation(): void
+    {
+        $config = $this->process([[
+            'enabled' => false,
+            'base_labels' => ['deploy-region' => 'eu'],
+        ]]);
+
+        self::assertSame(['deploy-region' => 'eu'], $config['base_labels']);
+    }
+
     public function testValidPyroscopeConfig(): void
     {
         $config = $this->process([[
